@@ -1,5 +1,6 @@
 package com.reallifedeveloper.tools.test.database.dbunit;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -23,6 +24,7 @@ public class DbUnitTestEntity {
     private Long l;
     private Float f;
     private Double d;
+    private BigDecimal bd;
     private Boolean bool;
     private Character c;
     private String string;
@@ -39,8 +41,8 @@ public class DbUnitTestEntity {
     private List<TestEntity> testEntities = new ArrayList<>();
 
     // CHECKSTYLE:OFF
-    public DbUnitTestEntity(byte b, Short s, Integer id, Long l, Float f, Double d, Boolean bool, Character c,
-            String string, Date date, TestEnum testEnum, Geometry geometry, TestEntity testEntity,
+    public DbUnitTestEntity(byte b, Short s, Integer id, Long l, Float f, Double d, BigDecimal bd, Boolean bool,
+            Character c, String string, Date date, TestEnum testEnum, Geometry geometry, TestEntity testEntity,
             Collection<TestEntity> testEntities) {
         // CHECKSTYLE:on
         this.b = b;
@@ -49,6 +51,7 @@ public class DbUnitTestEntity {
         this.l = l;
         this.f = f;
         this.d = d;
+        this.bd = bd;
         this.bool = bool;
         this.c = c;
         this.string = string;
@@ -84,6 +87,10 @@ public class DbUnitTestEntity {
 
     public Double d() {
         return d;
+    }
+
+    public BigDecimal bd() {
+        return bd;
     }
 
     public Boolean bool() {

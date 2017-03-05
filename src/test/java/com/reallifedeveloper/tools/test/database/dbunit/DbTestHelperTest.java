@@ -9,7 +9,9 @@ import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.datatype.IDataTypeFactory;
 import org.dbunit.operation.DatabaseOperation;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -18,6 +20,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:META-INF/spring-context-rld-build-tools-test.xml" })
 public class DbTestHelperTest {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Autowired
     private DataSource ds;
@@ -65,6 +70,20 @@ public class DbTestHelperTest {
     }
 
     @Test
+    public void readDataSetFromClasspathNonExistingDtd() throws Exception {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("DTD not found on classpath: /dbunit/no_such_file");
+        DbTestHelper.readDataSetFromClasspath("/dbunit/no_such_file", "/dbunit/testentity.xml");
+    }
+
+    @Test
+    public void readDataSetFromClasspathNonExistingResourceName() throws Exception {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Dataset not found on classpath: /dbunit/no_such_file");
+        DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", "/dbunit/no_such_file");
+    }
+
+    @Test
     public void readDataSetFromClasspathNullResourceNames() throws Exception {
         String[] resourceNames = null;
         Assert.assertNull("Reading data from null resources should be null",
@@ -78,15 +97,19 @@ public class DbTestHelperTest {
                 DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", resourceNames));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void constructorNullDataSource() throws Exception {
         IDataSet dataSet =
                 DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", "/dbunit/testentity.xml");
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Arguments must not be null: dataSource=null");
         new DbTestHelper(null, dataSet, null, dataTypeFactory);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void constructorNullDataSet() throws Exception {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Arguments must not be null: dataSource=" + ds + ", dataSet=null");
         new DbTestHelper(ds, null, null, dataTypeFactory);
     }
 }

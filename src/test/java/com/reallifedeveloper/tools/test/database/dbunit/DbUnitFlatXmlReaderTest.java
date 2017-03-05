@@ -1,6 +1,7 @@
 package com.reallifedeveloper.tools.test.database.dbunit;
 
 import java.io.FileNotFoundException;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -56,15 +57,15 @@ public class DbUnitFlatXmlReaderTest {
 
         TestEntity testEntity42 = new TestEntity(42L, "foo");
         TestEntity testEntity4711 = new TestEntity(4711L, "bar");
-        DbUnitTestEntity expected = new DbUnitTestEntity((byte) 1, (short) 2, 3, 4L, 5.0f, 6.0, false, 'a', "foo",
-                TestUtil.parseDate("2014-01-01"), TestEnum.FOO,
+        DbUnitTestEntity expected = new DbUnitTestEntity((byte) 1, (short) 2, 3, 4L, 5.0f, 6.0,
+                new BigDecimal(123456), false, 'a', "foo", TestUtil.parseDate("2014-01-01"), TestEnum.FOO,
                 geometryFromText("POLYGON((0 0, 0 100, 100 100, 100 0, 0 0))"), new TestEntity(42L, "foo"),
                 Arrays.asList(new TestEntity[] { testEntity42, testEntity4711 }));
         DbUnitTestEntity actual = repository.findOne(3);
         verifyEntity(expected, actual);
 
-        expected = new DbUnitTestEntity((byte) 10, (short) 11, 12, 13L, 14.0f, 15.0, true, 'b', "bar",
-                TestUtil.parseDate("2015-01-01"), TestEnum.BAR, geometryFromText("POINT(0 0)"),
+        expected = new DbUnitTestEntity((byte) 10, (short) 11, 12, 13L, 14.0f, 15.0, new BigDecimal(-1000), true, 'b',
+                "bar", TestUtil.parseDate("2015-01-01"), TestEnum.BAR, geometryFromText("POINT(0 0)"),
                 new TestEntity(4711L, "bar"), Collections.emptySet());
         actual = repository.findOne(12);
         verifyEntity(expected, actual);

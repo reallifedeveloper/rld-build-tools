@@ -17,6 +17,7 @@ public class DbUnitDtdGeneratorTest {
             + "<!ATTLIST DBUNITTESTENTITY\n"
             + "    ID CDATA #REQUIRED\n"
             + "    B CDATA #IMPLIED\n"
+            + "    BD CDATA #IMPLIED\n"
             + "    BOOL CDATA #IMPLIED\n"
             + "    C CDATA #IMPLIED\n"
             + "    D CDATA #IMPLIED\n"

@@ -8,6 +8,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.math.BigDecimal;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -268,6 +269,8 @@ public class DbUnitFlatXmlReader {
             return Float.parseFloat(s);
         } else if (type == Double.class) {
             return Double.parseDouble(s);
+        } else if (type == BigDecimal.class) {
+            return new BigDecimal(s);
         } else if (type == Boolean.class) {
             return Boolean.parseBoolean(s);
         } else if (type == Character.class) {

@@ -1,6 +1,7 @@
 package com.reallifedeveloper.tools.test.database.dbunit;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,12 +87,20 @@ public class DbTestHelper {
         } else {
             FlatXmlDataSetBuilder builder = new FlatXmlDataSetBuilder();
             if (dataSetDtdResourceName != null) {
-                builder.setMetaDataSetFromDtd(DbTestHelper.class.getResourceAsStream(dataSetDtdResourceName));
+                InputStream is = DbTestHelper.class.getResourceAsStream(dataSetDtdResourceName);
+                if (is == null) {
+                    throw new IllegalArgumentException("DTD not found on classpath: " + dataSetDtdResourceName);
+                }
+                builder.setMetaDataSetFromDtd(is);
             }
             builder.setColumnSensing(true);
             List<IDataSet> dataSets = new ArrayList<>();
             for (String dataSetResourceName : dataSetResourceNames) {
-                dataSets.add(builder.build(DbTestHelper.class.getResourceAsStream(dataSetResourceName)));
+                InputStream is = DbTestHelper.class.getResourceAsStream(dataSetResourceName);
+                if (is == null) {
+                    throw new IllegalArgumentException("Dataset not found on classpath: " + dataSetResourceName);
+                }
+                dataSets.add(builder.build(is));
             }
             return new CompositeDataSet(dataSets.toArray(new IDataSet[dataSets.size()]));
         }
