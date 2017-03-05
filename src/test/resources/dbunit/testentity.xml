@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dataset SYSTEM "rld-build-tools.dtd">
+<dataset>
+
+    <TEST_ENTITY ID="42" NAME="foo" />
+    <TEST_ENTITY ID="4711" NAME="bar" />
+    <TEST_ENTITY ID="9999" NAME="" />
+
+</dataset>

@@ -1,0 +1,14 @@
+<!ELEMENT profiles (profile)*>
+<!ATTLIST profiles
+    version CDATA #REQUIRED>
+
+<!ELEMENT profile (setting)*>
+<!ATTLIST profile
+    kind CDATA #REQUIRED
+    name CDATA #REQUIRED
+    version CDATA #REQUIRED>
+
+<!ELEMENT setting EMPTY>
+<!ATTLIST setting
+    id CDATA #REQUIRED
+    value CDATA #REQUIRED>

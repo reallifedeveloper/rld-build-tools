@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE suppressions PUBLIC
+    "-//Puppy Crawl//DTD Suppressions 1.1//EN"
+    "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+
+<suppressions>
+    <suppress checks="MagicNumber" files="src[/\\]test[/\\]java" />
+    <suppress checks="MultipleStringLiterals" files="src[/\\]test[/\\]java" />
+    <suppress id="noNewDate" files="src[/\\]test[/\\]java" />
+    <suppress id="noSystemCurrentTimeMillies" files="src[/\\]test[/\\]java" />
+    <suppress checks="JavadocPackage|JavadocMethod|JavadocType" files="src[/\\]test[/\\]java" />
+
+    <suppress checks="FileLength" files=".*\.txt$" />
+    <suppress checks="FileLength" files=".*\.sql$" />
+
+    <suppress checks=".*" files="[/\\]target[/\\]" />
+    <suppress checks=".*" files="[/\\]build[/\\]" />
+    <suppress checks=".*" files="[/\\]lib[/\\]" />
+    <suppress checks=".*" files="[/\\]src[/\\]main[/\\]resources[/\\]fitnesse[/\\]" />
+    <suppress checks=".*" files="[/\\]src[/\\]main[/\\]csharp[/\\]" />
+    <suppress checks=".*" files="[/\\]src[/\\]test[/\\]resources[/\\]soapui[/\\]" />
+    <suppress checks=".*" files=".*\.png$" />
+    <suppress checks=".*" files=".*\.gif$" />
+    <suppress checks=".*" files=".*\.ico$" />
+    <suppress checks=".*" files=".*\.dmp$" />
+    <suppress checks=".*" files=".*\.zip$" />
+    <suppress checks=".*" files=".*\.json$" />
+
+    <!-- Shapefiles -->
+    <suppress checks=".*" files=".*\.shp$" />
+    <suppress checks=".*" files=".*\.shx$" />
+    <suppress checks=".*" files=".*\.dbf$" />
+    <suppress checks=".*" files=".*\.prj$" />
+    <suppress checks=".*" files=".*\.cpg$" />
+
+    <!-- Keystore files -->
+    <suppress checks=".*" files=".*[/\\]keystore" />
+    <suppress checks=".*" files=".*[/\\]cacerts" />
+
+</suppressions>

@@ -1,0 +1,6 @@
+/*
+ * Copyright (c) 2017 RealLifeDeveloper
+ *
+ * This file header is not used, but could be added to checkstyle.xml.
+ */
+

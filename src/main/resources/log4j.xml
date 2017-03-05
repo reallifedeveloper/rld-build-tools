@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "http://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/xml/doc-files/log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="true">
+
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="[%d{yyyy-MM-dd HH:mm:ss:SSS z}] %5p [%t][%x] %c{2}: %m%n" />
+        </layout>
+    </appender>
+
+    <logger name="com.reallifedeveloper">
+        <level value="trace" />
+    </logger>
+
+    <logger name="org.springframework">
+        <level value="warn" />
+    </logger>
+
+    <logger name="org.springframework.orm.jpa">
+        <level value="info" />
+    </logger>
+
+    <!-- Set to "debug" to display Hibernate SQL statements, equivalent to the deprecated show_sql=true. -->
+    <logger name="org.hibernate.SQL">
+        <level value="debug" />
+    </logger>
+
+    <!-- Set to "trace" to show arguments to SQL queries, among other things. -->
+    <logger name="org.hibernate.type">
+        <level value="info" />
+    </logger>
+
+    <logger name="org.dbunit">
+        <level value="info" />
+    </logger>
+
+    <logger name="org.dbunit.dataset">
+        <level value="info" />
+    </logger>
+
+    <root>
+        <level value="info" />
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+</log4j:configuration>

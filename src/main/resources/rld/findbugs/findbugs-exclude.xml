@@ -1,0 +1,16 @@
+<FindBugsFilter xmlns="http://findbugs.sourceforge.net/filter/1.3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://findbugs.sourceforge.net/filter/1.3.0 findbugs-filter.xsd">
+    <!-- See http://findbugs.sourceforge.net/manual/filter.html -->
+    <Match>
+        <Or>
+            <!-- Allowing anonymous inner classes that could be made static makes the code more readable. -->
+            <Bug pattern="SIC_INNER_SHOULD_BE_STATIC_ANON" />
+
+            <!-- Working with named keys instead of entry sets makes the code more readable. -->
+            <Bug pattern="WMI_WRONG_MAP_ITERATOR" />
+
+            <!-- Ignore classes generated for the JPA static metamodel, with names ending with underscore. -->
+            <Class name="~.*_" />
+        </Or>
+    </Match>
+</FindBugsFilter>
