@@ -2,18 +2,14 @@ package com.reallifedeveloper.tools.test.database.dbunit;
 
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.io.WKTReader;
 
 import com.reallifedeveloper.tools.test.TestUtil;
 import com.reallifedeveloper.tools.test.database.dbunit.DbUnitTestEntity.TestEnum;
@@ -57,31 +53,20 @@ public class DbUnitFlatXmlReaderTest {
 
         TestEntity testEntity42 = new TestEntity(42L, "foo");
         TestEntity testEntity4711 = new TestEntity(4711L, "bar");
-        DbUnitTestEntity expected = new DbUnitTestEntity((byte) 1, (short) 2, 3, 4L, 5.0f, 6.0,
-                new BigDecimal(123456), false, 'a', "foo", TestUtil.parseDate("2014-01-01"), TestEnum.FOO,
-                geometryFromText("POLYGON((0 0, 0 100, 100 100, 100 0, 0 0))"), new TestEntity(42L, "foo"),
+        DbUnitTestEntity expected = new DbUnitTestEntity((byte) 1, (short) 2, 3, 4L, 5.0f, 6.0, false, 'a', "foo",
+                TestUtil.parseDate("2014-01-01"), TestEnum.FOO, new BigDecimal("1234.56"),
+                new BigInteger("9999999999"), new TestEntity(42L, "foo"),
                 Arrays.asList(new TestEntity[] { testEntity42, testEntity4711 }));
         DbUnitTestEntity actual = repository.findOne(3);
         verifyEntity(expected, actual);
 
-        expected = new DbUnitTestEntity((byte) 10, (short) 11, 12, 13L, 14.0f, 15.0, new BigDecimal(-1000), true, 'b',
-                "bar", TestUtil.parseDate("2015-01-01"), TestEnum.BAR, geometryFromText("POINT(0 0)"),
-                new TestEntity(4711L, "bar"), Collections.emptySet());
+        expected = new DbUnitTestEntity((byte) 10, (short) 11, 12, 13L, 14.0f, 15.0, true, 'b', "bar",
+                TestUtil.parseDate("2015-01-01"), TestEnum.BAR, new BigDecimal("-1000.01"),
+                new BigInteger("8888888888"), new TestEntity(4711L, "bar"), Collections.emptySet());
         actual = repository.findOne(12);
         verifyEntity(expected, actual);
     }
 
-    private static Geometry geometryFromText(String wkt) {
-        GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
-        WKTReader wktReader = new WKTReader(geometryFactory);
-        try {
-            return wktReader.read(wkt);
-        } catch (com.vividsolutions.jts.io.ParseException e) {
-            throw new IllegalArgumentException("Incorrect geometry object: " + wkt, e);
-        }
-    }
-
-    @Test
     public void readFileForEntityWithMissingAssociations() throws Exception {
         InMemoryJpaRepository<DbUnitTestEntity, Integer> repository = new InMemoryJpaRepository<>();
         DbUnitFlatXmlReader xmlReader = new DbUnitFlatXmlReader();
@@ -141,8 +126,6 @@ public class DbUnitFlatXmlReaderTest {
             Assert.assertEquals("Wrong String field: ", expected.string(), actual.string());
             Assert.assertEquals("Wrong date field: ", expected.date(), actual.date());
             Assert.assertEquals("Wrong enum field: ", expected.testEnum(), actual.testEnum());
-            Assert.assertTrue("Wrong geometry, expected=" + expected.geometry() + ", actual=" + actual.geometry(),
-                    expected.geometry().equalsTopo(actual.geometry()));
             if (expected.testEntity() == null) {
                 Assert.assertNull("Test entity should be null", actual.testEntity());
             } else {

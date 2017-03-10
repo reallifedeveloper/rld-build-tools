@@ -9,10 +9,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -27,7 +27,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.hibernate.spatial.dialect.sqlserver.convertors.Decoders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -37,8 +36,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
-import com.vividsolutions.jts.geom.Geometry;
 
 import com.reallifedeveloper.tools.test.TestUtil;
 
@@ -269,8 +266,6 @@ public class DbUnitFlatXmlReader {
             return Float.parseFloat(s);
         } else if (type == Double.class) {
             return Double.parseDouble(s);
-        } else if (type == BigDecimal.class) {
-            return new BigDecimal(s);
         } else if (type == Boolean.class) {
             return Boolean.parseBoolean(s);
         } else if (type == Character.class) {
@@ -279,8 +274,10 @@ public class DbUnitFlatXmlReader {
             return s;
         } else if (type == Date.class) {
             return TestUtil.parseDate(s);
-        } else if (type == Geometry.class) {
-            return readGeometry(s);
+        } else if (type == BigDecimal.class) {
+            return new BigDecimal(s);
+        } else if (type == BigInteger.class) {
+            return new BigInteger(s);
         } else {
             return findEntity(s, type);
         }
@@ -324,11 +321,6 @@ public class DbUnitFlatXmlReader {
             entityType = entityType.getSuperclass();
         }
         return null;
-    }
-
-    private Geometry readGeometry(String base64) {
-        byte[] raw = Base64.getDecoder().decode(base64);
-        return Decoders.decode(raw);
     }
 
 }

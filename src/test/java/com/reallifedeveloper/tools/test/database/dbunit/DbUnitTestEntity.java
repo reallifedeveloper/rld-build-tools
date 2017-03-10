@@ -1,6 +1,7 @@
 package com.reallifedeveloper.tools.test.database.dbunit;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -13,8 +14,6 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 
-import com.vividsolutions.jts.geom.Geometry;
-
 @Entity
 public class DbUnitTestEntity {
     private Byte b;
@@ -24,13 +23,13 @@ public class DbUnitTestEntity {
     private Long l;
     private Float f;
     private Double d;
-    private BigDecimal bd;
     private Boolean bool;
     private Character c;
     private String string;
     private Date date;
     private TestEnum testEnum;
-    private Geometry geometry;
+    private BigDecimal bd;
+    private BigInteger bi;
     @ManyToOne
     @JoinColumn(name = "testentity_id")
     private TestEntity testEntity;
@@ -41,8 +40,8 @@ public class DbUnitTestEntity {
     private List<TestEntity> testEntities = new ArrayList<>();
 
     // CHECKSTYLE:OFF
-    public DbUnitTestEntity(byte b, Short s, Integer id, Long l, Float f, Double d, BigDecimal bd, Boolean bool,
-            Character c, String string, Date date, TestEnum testEnum, Geometry geometry, TestEntity testEntity,
+    public DbUnitTestEntity(byte b, Short s, Integer id, Long l, Float f, Double d, Boolean bool, Character c,
+            String string, Date date, TestEnum testEnum, BigDecimal bd, BigInteger bi, TestEntity testEntity,
             Collection<TestEntity> testEntities) {
         // CHECKSTYLE:on
         this.b = b;
@@ -51,13 +50,13 @@ public class DbUnitTestEntity {
         this.l = l;
         this.f = f;
         this.d = d;
-        this.bd = bd;
         this.bool = bool;
         this.c = c;
         this.string = string;
         this.date = date;
         this.testEnum = testEnum;
-        this.geometry = geometry;
+        this.bd = bd;
+        this.bi = bi;
         this.testEntity = testEntity;
         this.testEntities = new ArrayList<>(testEntities);
     }
@@ -89,10 +88,6 @@ public class DbUnitTestEntity {
         return d;
     }
 
-    public BigDecimal bd() {
-        return bd;
-    }
-
     public Boolean bool() {
         return bool;
     }
@@ -113,8 +108,12 @@ public class DbUnitTestEntity {
         return testEnum;
     }
 
-    public Geometry geometry() {
-        return geometry;
+    public BigDecimal bd() {
+        return bd;
+    }
+
+    public BigInteger bi() {
+        return bi;
     }
 
     public TestEntity testEntity() {
