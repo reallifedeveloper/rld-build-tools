@@ -15,6 +15,7 @@ import javax.persistence.EmbeddedId;
 import javax.persistence.Id;
 
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -359,7 +360,7 @@ public class InMemoryJpaRepository<T, ID extends Serializable & Comparable<ID>> 
             } else if (getIdMethod(entity) != null) {
                 id = (ID) getIdMethod(entity).invoke(entity);
             } else {
-                throw new IllegalArgumentException("Entity has no @Id annontation: " + entity);
+                throw new IllegalArgumentException("Entity has no @Id annotation: " + entity);
             }
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
@@ -419,6 +420,82 @@ public class InMemoryJpaRepository<T, ID extends Serializable & Comparable<ID>> 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{entities=" + entities + "}";
+    }
+
+    //
+    // Query by Example methods. Not yet implemented.
+    //
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method is not yet implemented, so it always throws an exception.
+     *
+     * @throws UnsupportedOperationException always
+     */
+    @Override
+    public <S extends T> long count(Example<S> example) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method is not yet implemented, so it always throws an exception.
+     *
+     * @throws UnsupportedOperationException always
+     */
+    @Override
+    public <S extends T> boolean exists(Example<S> example) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method is not yet implemented, so it always throws an exception.
+     *
+     * @throws UnsupportedOperationException always
+     */
+    @Override
+    public <S extends T> List<S> findAll(Example<S> example) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method is not yet implemented, so it always throws an exception.
+     *
+     * @throws UnsupportedOperationException always
+     */
+    @Override
+    public <S extends T> Page<S> findAll(Example<S> example, Pageable pageable) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method is not yet implemented, so it always throws an exception.
+     *
+     * @throws UnsupportedOperationException always
+     */
+    @Override
+    public <S extends T> List<S> findAll(Example<S> example, Sort sort) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method is not yet implemented, so it always throws an exception.
+     *
+     * @throws UnsupportedOperationException always
+     */
+    @Override
+    public <S extends T> S findOne(Example<S> example) {
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
 }

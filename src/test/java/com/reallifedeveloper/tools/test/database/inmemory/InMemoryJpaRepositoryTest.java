@@ -10,12 +10,19 @@ import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 public class InMemoryJpaRepositoryTest {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     private final InMemoryJpaRepository<TestEntityWithFieldAnnotations, Integer> repository =
             new InMemoryJpaRepository<>();
@@ -57,14 +64,18 @@ public class InMemoryJpaRepositoryTest {
         Assert.assertTrue("No 'bar' entities should be found", foundEntities.isEmpty());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void findByFieldNoSuchField() {
         repository.save(new TestEntityWithFieldAnnotations(1, "foo"));
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Field not found or not accessible: noSuchField");
         repository.findByField("noSuchField", "foo");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void findByFieldNullFieldName() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("fieldName must not be null");
         repository.findByField(null, "foo");
     }
 
@@ -101,10 +112,12 @@ public class InMemoryJpaRepositoryTest {
         Assert.assertNull("'bar' entity should not be found", repository.findByUniqueField("name", "bar"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void findByUniqueFieldNotUnique() {
         repository.save(new TestEntityWithFieldAnnotations(1, "foo"));
         repository.save(new TestEntityWithFieldAnnotations(2, "foo"));
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Field name is not unique, found 2 entities: [foo, foo]");
         repository.findByUniqueField("name", "foo");
     }
 
@@ -121,8 +134,10 @@ public class InMemoryJpaRepositoryTest {
         Assert.assertEquals(2, repository.count());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void deleteNullId() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("id must not be null");
         repository.delete((Integer) null);
     }
 
@@ -135,18 +150,24 @@ public class InMemoryJpaRepositoryTest {
         Assert.assertEquals(0, repository.count());
     }
 
-    @Test(expected = EmptyResultDataAccessException.class)
+    @Test
     public void deleteNonExistingId() {
+        expectedException.expect(EmptyResultDataAccessException.class);
+        expectedException.expectMessage("Entity with id -1 not found");
         repository.delete(-1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void deleteNullEntities() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("entitiesToDelete must not be null");
         repository.delete((Iterable<TestEntityWithFieldAnnotations>) null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void deleteNullEntitiesInBatch() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("entitiesToDelete must not be null");
         repository.deleteInBatch((Iterable<TestEntityWithFieldAnnotations>) null);
     }
 
@@ -180,8 +201,10 @@ public class InMemoryJpaRepositoryTest {
         Assert.assertEquals(0, repository.count());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void deleteNullEntity() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("entity must not be null");
         repository.delete((TestEntityWithFieldAnnotations) null);
     }
 
@@ -215,9 +238,11 @@ public class InMemoryJpaRepositoryTest {
         Assert.assertEquals(0, repository.count());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void existsNullId() {
-        repository.exists(null);
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("id must not be null");
+        repository.exists((Integer) null);
     }
 
     @Test
@@ -239,8 +264,10 @@ public class InMemoryJpaRepositoryTest {
         Assert.assertTrue("findAll should contain entity bar", find(bar, entities));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void findAllNullIds() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("ids must not be null");
         repository.findAll((Iterable<Integer>) null);
     }
 
@@ -279,19 +306,25 @@ public class InMemoryJpaRepositoryTest {
         Assert.assertFalse("findAll should not contain entity foo", find(foo, entities));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void findAllPageable() {
+        expectedException.expect(UnsupportedOperationException.class);
+        expectedException.expectMessage("Not yet implemented");
         repository.findAll(new PageRequest(0, 10));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void findAllSort() {
+        expectedException.expect(UnsupportedOperationException.class);
+        expectedException.expectMessage("Not yet implemented");
         repository.findAll(new Sort("foo"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void findOneNullId() {
-        repository.findOne(null);
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("id must not be null");
+        repository.findOne((Integer) null);
     }
 
     @Test
@@ -321,18 +354,24 @@ public class InMemoryJpaRepositoryTest {
 
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void saveNullEntity() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("entity must not be null");
         repository.save((TestEntityWithFieldAnnotations) null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void saveNullEntities() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("entitiesToSave must not be null");
         repository.save((Iterable<TestEntityWithFieldAnnotations>) null);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void saveNullPrimaryKeyWithNoGenerator() {
+        expectedException.expect(IllegalStateException.class);
+        expectedException.expectMessage("Primary key is null: foo");
         repository.save(new TestEntityWithFieldAnnotations(null, "foo"));
     }
 
@@ -385,8 +424,10 @@ public class InMemoryJpaRepositoryTest {
         Assert.assertEquals("Entity 3 should be found", baz, repository.findOne(3));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void saveAndFlushNullEntity() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("entity must not be null");
         repository.saveAndFlush(null);
     }
 
@@ -419,9 +460,11 @@ public class InMemoryJpaRepositoryTest {
         Assert.assertEquals("Entity 1 should be found", foo, repo.findOne(1L));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void entityWithNoIdAnnotation() {
         InMemoryJpaRepository<String, Integer> repo = new InMemoryJpaRepository<>();
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Entity has no @Id annotation: foo");
         repo.save("foo");
     }
 
@@ -465,6 +508,48 @@ public class InMemoryJpaRepositoryTest {
             size++;
         }
         return size;
+    }
+
+    @Test
+    public void countByExample() {
+        expectedException.expect(UnsupportedOperationException.class);
+        expectedException.expectMessage("Not yet implemented");
+        repository.count((Example<TestEntityWithFieldAnnotations>) null);
+    }
+
+    @Test
+    public void existsByExample() {
+        expectedException.expect(UnsupportedOperationException.class);
+        expectedException.expectMessage("Not yet implemented");
+        repository.exists((Example<TestEntityWithFieldAnnotations>) null);
+    }
+
+    @Test
+    public void findAllByExample() {
+        expectedException.expect(UnsupportedOperationException.class);
+        expectedException.expectMessage("Not yet implemented");
+        repository.findAll((Example<TestEntityWithFieldAnnotations>) null);
+    }
+
+    @Test
+    public void findAllByExampleAndPageable() {
+        expectedException.expect(UnsupportedOperationException.class);
+        expectedException.expectMessage("Not yet implemented");
+        repository.findAll((Example<TestEntityWithFieldAnnotations>) null, (Pageable) null);
+    }
+
+    @Test
+    public void findAllByExampleAndSort() {
+        expectedException.expect(UnsupportedOperationException.class);
+        expectedException.expectMessage("Not yet implemented");
+        repository.findAll((Example<TestEntityWithFieldAnnotations>) null, (Sort) null);
+    }
+
+    @Test
+    public void findOneByExample() {
+        expectedException.expect(UnsupportedOperationException.class);
+        expectedException.expectMessage("Not yet implemented");
+        repository.findOne((Example<TestEntityWithFieldAnnotations>) null);
     }
 
     /**
