@@ -11,7 +11,7 @@
 
     <module name="SuppressionFilter">
         <property name="file" value="${checkstyle.suppressions}"
-            default="http://src.system.svenskakyrkan.se:8880/raw/UFF%2FBuild-tools.git/develop/src%2Fmain%2Fresources%2Fsvk%2Fuff%2Fcheckstyle%2Fcheckstyle-suppressions.xml" />
+            default="https://github.com/reallifedeveloper/rld-build-tools/blob/master/src/main/resources/rld/checkstyle/checkstyle-suppressions.xml" />
     </module>
 
     <!-- Checks that a package-info.java file exists for each package. -->
