@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>rld-build-tools</artifactId>
-    <version>1.4</version>
+    <version>1.5</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>Tools and configuration for RealLifeDeveloper projects that is only used at build-time, not runtime</description>
@@ -88,6 +88,10 @@
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.rabbitmq</groupId>
+            <artifactId>amqp-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
