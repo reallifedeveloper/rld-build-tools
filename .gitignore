@@ -1,5 +1,6 @@
-target/
+/target/
 /.settings/
 /.classpath
 /.project
+/.vscode
 .pmd

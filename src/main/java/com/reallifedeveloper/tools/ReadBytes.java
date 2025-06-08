@@ -2,6 +2,8 @@ package com.reallifedeveloper.tools;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
@@ -17,7 +19,7 @@ public final class ReadBytes {
 
     private static final int BLOCK_SIZE = 16;
 
-    private static final String NEWLINE = System.getProperty("line.separator");
+    private static final String NEWLINE = "\\R";
 
     private static final Logger LOG = LoggerFactory.getLogger(ReadBytes.class);
 
@@ -32,23 +34,23 @@ public final class ReadBytes {
      *
      * @param args a string array that should contain one element, the URL to read from
      *
-     * @throws IOException if reading from the URL failed
+     * @throws IOException        if reading from the URL failed
+     * @throws URISyntaxException if the provided URL is malformed
      */
-    public static void main(String... args) throws IOException {
+    public static void main(String... args) throws IOException, URISyntaxException {
         if (args.length != 1) {
             throw new IllegalArgumentException("Usage: java " + ReadBytes.class.getName() + " <url>");
         }
-        URL url = new URL(args[0]);
+        URL url = new URI(args[0]).toURL();
         logBytesFromUrl(url);
     }
 
     /**
-     * Reads bytes from the given URL and logs them at info level, both as hexadecimal byte values and
-     * as an ASCII string.
+     * Reads bytes from the given URL and logs them at info level, both as hexadecimal byte values and as an ASCII string.
      *
      * @param url the URL to read from
      *
-     * @throws IOException if reading from <code>url</code> failed
+     * @throws IOException if reading from {@code url} failed
      */
     public static void logBytesFromUrl(URL url) throws IOException {
         if (url == null) {
@@ -74,8 +76,7 @@ public final class ReadBytes {
                 sb.append("   ");
             }
         }
-        sb.append(": ");
-        sb.append(new String(data, StandardCharsets.US_ASCII).replaceAll(NEWLINE, " "));
+        sb.append(": ").append(new String(data, StandardCharsets.US_ASCII).replaceAll(NEWLINE, " "));
         LOG.info(sb.toString());
     }
 }

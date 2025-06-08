@@ -1,28 +1,31 @@
 <?xml version="1.0"?>
-<!DOCTYPE module PUBLIC
-    "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
-     "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
+<!DOCTYPE module PUBLIC "-//Puppy Crawl//DTD Check Configuration 1.3//EN" "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
 
 <module name="Checker">
-    <!-- A TreeWalker module FileContentsHolder is needed for SuppressionCommentFilter to work -->
-    <module name="SuppressionCommentFilter" />
-
     <property name="severity" value="${checkstyle.severity}" default="error" />
+
+    <module name="SuppressWarningsFilter" />
 
     <module name="SuppressionFilter">
         <property name="file" value="${checkstyle.suppressions}"
             default="https://github.com/reallifedeveloper/rld-build-tools/blob/master/src/main/resources/rld/checkstyle/checkstyle-suppressions.xml" />
     </module>
 
+
+    <module name="LineLength">
+        <property name="max" value="140" />
+        <property name="ignorePattern" value="\*\s@throws\s.*$|^import|\*\s@reviewer\s.*$" />
+    </module>
+
     <!-- Checks that a package-info.java file exists for each package. -->
     <!-- See http://checkstyle.sf.net/config_javadoc.html#JavadocPackage -->
-    <module name="JavadocPackage">
-        <property name="severity" value="warning" />
-    </module>
+    <module name="JavadocPackage" />
 
     <!-- Checks for Headers -->
     <!-- See http://checkstyle.sf.net/config_header.html -->
-    <!--module name="Header"> <property name="headerFile" value="${checkstyle.header.file}" /> </module -->
+    <!-- <module name="Header">
+        <property name="headerFile" value="${checkstyle.header.file}" />
+    </module> -->
 
     <!-- Following interprets the header file as regular expressions. -->
     <!-- <module name="RegexpHeader"> -->
@@ -59,8 +62,12 @@
         <!-- M O D U L E S -->
         <!-- ============================================================ -->
 
-        <!-- FileContentsHolder is needed for SuppressionCommentFilter to work -->
-        <module name="FileContentsHolder" />
+        <module name="SuppressionCommentFilter" />
+        <module name="SuppressWarningsHolder" />
+        <module name="SuppressionXpathFilter">
+            <property name="file" value="classpath:/rld/checkstyle/checkstyle-suppressions.xml" />
+            <property name="optional" value="false" />
+        </module>
 
         <!-- ============================================================ -->
         <!-- Javadoc Comments -->
@@ -70,23 +77,18 @@
         <module name="JavadocType">
             <property name="scope" value="package" />
             <property name="authorFormat" value="\S" />
-            <property name="severity" value="warning" />
         </module>
 
         <module name="JavadocMethod">
-            <property name="scope" value="protected" />
-            <property name="allowUndeclaredRTE" value="true" />
-            <property name="severity" value="warning" />
+            <property name="accessModifiers" value="public, protected" />
         </module>
 
         <module name="JavadocVariable">
             <property name="scope" value="protected" />
-            <property name="severity" value="warning" />
         </module>
 
         <module name="JavadocStyle">
             <property name="scope" value="package" />
-            <property name="severity" value="warning" />
         </module>
 
         <!-- ============================================================ -->
@@ -138,10 +140,6 @@
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
         <!-- ============================================================ -->
 
-        <module name="LineLength">
-            <property name="max" value="120" />
-            <property name="ignorePattern" value="\*\s@throws\s.*$|^import|\*\s@reviewer\s.*$" />
-        </module>
         <module name="MethodLength" />
         <module name="ParameterNumber">
             <property name="max" value="11" />
@@ -186,7 +184,7 @@
 
         <module name="AvoidNestedBlocks" />
         <module name="EmptyBlock">
-            <property name="option" value="stmt" />
+            <property name="option" value="STATEMENT" />
             <property name="tokens"
                 value="LITERAL_DO,LITERAL_ELSE,LITERAL_FINALLY,LITERAL_IF,LITERAL_FOR,LITERAL_TRY,LITERAL_WHILE,INSTANCE_INIT,STATIC_INIT" />
         </module>
@@ -217,7 +215,7 @@
             <property name="ignoreSetter" value="true" />
         </module>
         <module name="IllegalInstantiation">
-            <property name="classes" value="java.lang.Boolean"/>
+            <property name="classes" value="java.lang.Boolean" />
         </module>
         <module name="IllegalTokenText" />
         <module name="IllegalThrows" />
@@ -246,7 +244,7 @@
         <module name="InterfaceIsType" />
         <module name="MutableException" />
         <module name="VisibilityModifier" />
-        <module name="NoFinalizer"/>
+        <module name="NoFinalizer" />
 
         <!-- ============================================================ -->
         <!-- Miscellaneous Other Checks -->
@@ -254,7 +252,7 @@
         <!-- ============================================================ -->
 
         <module name="IllegalToken">
-            <property name="tokens" value="LITERAL_NATIVE, STRICTFP"/>
+            <property name="tokens" value="LITERAL_NATIVE, STRICTFP" />
         </module>
         <module name="ArrayTypeStyle" />
         <module name="OuterTypeFilename" />
@@ -271,7 +269,7 @@
             <property name="format" value="System\s*\.\s*currentTimeMillis" />
             <property name="ignoreComments" value="true" />
             <property name="message"
-                value="Calls to System.currentTimeMillis() is not allowed. Use the TimeService instead" />
+                value="Calls to System.currentTimeMillis() is not allowed. Use java.time.Clock instead" />
         </module>
         <module name="Regexp">
             <property name="id" value="noNewDate" />
@@ -279,7 +277,7 @@
             <property name="format" value="new\s+(java.util.)?Date\s*\(\s*\)" />
             <property name="ignoreComments" value="true" />
             <property name="message"
-                value="Usage of new java.util.Date() is not allowed. Use the TimeService instead" />
+                value="Usage of new java.util.Date() is not allowed. Use java.time.Clock instead" />
         </module>
         <module name="Regexp">
             <property name="id" value="noMathRandom" />
@@ -289,15 +287,22 @@
             <property name="message"
                 value="Usage of new Math.random() is not allowed. Use java.util.Random instead" />
         </module>
+        <module name="Regexp">
+            <property name="id" value="noReturnNull" />
+            <property name="illegalPattern" value="true" />
+            <property name="format" value="return\s+null\s*;" />
+            <property name="ignoreComments" value="true" />
+            <property name="message" value="Never return null. Either return an empty collection or Optional.empty" />
+        </module>
         <module name="TodoComment">
             <property name="severity" value="info" />
         </module>
         <module name="UpperEll" />
         <!-- inga break, continue eller return i finally block -->
         <module name="DescendantToken">
-            <property name="tokens" value="LITERAL_FINALLY"/>
-            <property name="limitedTokens" value="LITERAL_RETURN,LITERAL_CONTINUE,LITERAL_BREAK"/>
-            <property name="maximumNumber" value="0"/>
+            <property name="tokens" value="LITERAL_FINALLY" />
+            <property name="limitedTokens" value="LITERAL_RETURN,LITERAL_CONTINUE,LITERAL_BREAK" />
+            <property name="maximumNumber" value="0" />
         </module>
     </module>
 </module>

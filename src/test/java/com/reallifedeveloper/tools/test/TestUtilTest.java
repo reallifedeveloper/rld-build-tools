@@ -1,34 +1,39 @@
 package com.reallifedeveloper.tools.test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestUtilTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
+    private static final Logger LOG = LoggerFactory.getLogger(TestUtilTest.class);
 
     @Test
     public void findFreePort() throws Exception {
+        LOG.info("foo");
         int port = TestUtil.findFreePort();
-        Assert.assertTrue("Free port should be > 1024", port > 1024);
-        try {
-            new Socket("localhost", port);
-            Assert.fail("Connecting to localhost on port " + port + " should fail");
+        assertTrue(port > 1024, "Free port should be > 1024");
+        try (Socket socket = new Socket("localhost", port)) {
+            fail("Connecting to localhost on port " + port + " should fail");
         } catch (ConnectException e) {
             // OK
         }
@@ -42,16 +47,14 @@ public class TestUtilTest {
 
     @Test
     public void parseMalformedDate() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Unparseable date: foo");
-        TestUtil.parseDate("foo");
+        Exception e = assertThrows(IllegalArgumentException.class, () -> TestUtil.parseDate("foo"));
+        assertEquals("Unparseable date: foo", e.getMessage());
     }
 
     @Test
     public void parseNullDate() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("date must not be null");
-        TestUtil.parseDate(null);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> TestUtil.parseDate(null));
+        assertEquals("date must not be null", e.getMessage());
     }
 
     @Test
@@ -62,39 +65,44 @@ public class TestUtilTest {
 
     @Test
     public void parseMalformedDateTime() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Unparseable date/time: foo");
-        TestUtil.parseDateTime("foo");
+        Exception e = assertThrows(IllegalArgumentException.class, () -> TestUtil.parseDateTime("foo"));
+        assertEquals("Unparseable date/time: foo", e.getMessage());
     }
 
     @Test
     public void parseNullDateTime() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("dateTime must not be null");
-        TestUtil.parseDateTime(null);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> TestUtil.parseDateTime(null));
+        assertEquals(e.getMessage(), "dateTime must not be null");
     }
 
     private void verifyDate(Date date, int year, int month, int dayOfMonth, int hour, int minute, int second) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
-        Assert.assertEquals("Wrong year: ", year, calendar.get(Calendar.YEAR));
-        Assert.assertEquals("Wrong month: ", month, calendar.get(Calendar.MONTH));
-        Assert.assertEquals("Wrong day: ", dayOfMonth, calendar.get(Calendar.DAY_OF_MONTH));
-        Assert.assertEquals("Wrong hour: ", hour, calendar.get(Calendar.HOUR_OF_DAY));
-        Assert.assertEquals("Wrong minute: ", minute, calendar.get(Calendar.MINUTE));
-        Assert.assertEquals("Wrong second: ", second, calendar.get(Calendar.SECOND));
+        assertEquals(year, calendar.get(Calendar.YEAR), "Wrong year: ");
+        assertEquals(month, calendar.get(Calendar.MONTH), "Wrong month: ");
+        assertEquals(dayOfMonth, calendar.get(Calendar.DAY_OF_MONTH), "Wrong day: ");
+        assertEquals(hour, calendar.get(Calendar.HOUR_OF_DAY), "Wrong hour: ");
+        assertEquals(minute, calendar.get(Calendar.MINUTE), "Wrong minute: ");
+        assertEquals(second, calendar.get(Calendar.SECOND), "Wrong second: ");
     }
 
     @Test
     public void writeToFile() throws Exception {
         String filename = System.getProperty("java.io.tmpdir") + "junitWriteToFile.txt";
         String s = "foo" + System.lineSeparator() + "bar" + System.lineSeparator() + "\u03B1\u03B2\u03B3";
-        TestUtil.writeToFile(s, filename, "UTF-8");
+        TestUtil.writeToFile(s, filename, StandardCharsets.UTF_8);
         List<String> lines = Files.readAllLines(Paths.get(filename), StandardCharsets.UTF_8);
-        Assert.assertEquals("Wrong number of lines in file: ", 3, lines.size());
-        Assert.assertEquals("Wrong content in line 1: ", "foo", lines.get(0));
-        Assert.assertEquals("Wrong content in line 2: ", "bar", lines.get(1));
-        Assert.assertEquals("Wrong content in line 3: ", "\u03B1\u03B2\u03B3", lines.get(2));
+        assertEquals(3, lines.size(), "Wrong number of lines in file: ");
+        assertEquals("foo", lines.get(0), "Wrong content in line 1: ");
+        assertEquals("bar", lines.get(1), "Wrong content in line 2: ");
+        assertEquals("\u03B1\u03B2\u03B3", lines.get(2), "Wrong content in line 3: ");
+    }
+
+    @Test
+    public void writeToNonExistingFile() throws Exception {
+        Exception e = assertThrows(NoSuchFileException.class,
+                () -> TestUtil.writeToFile("foo", "noSuchDirectory/test.txt", StandardCharsets.UTF_8));
+        assertTrue(e.getMessage().contains("noSuchDirectory"));
     }
 
     @Test
@@ -104,73 +112,98 @@ public class TestUtilTest {
         file.createNewFile();
         file.setWritable(false);
         try {
-            expectedException.expect(FileNotFoundException.class);
-            TestUtil.writeToFile("foo", filename, "UTF-8");
+            assertThrows(AccessDeniedException.class, () -> TestUtil.writeToFile("foo", filename, StandardCharsets.UTF_8));
         } finally {
             file.delete();
         }
     }
 
     @Test
-    public void writeToFileIllegalCharSetName() throws Exception {
-        String filename = System.getProperty("java.io.tmpdir") + "junitWriteToFile.txt";
-        expectedException.expect(UnsupportedEncodingException.class);
-        expectedException.expectMessage("bar");
-        TestUtil.writeToFile("foo", filename, "bar");
-    }
-
-    @Test
-    public void writeToNonExistingDirectory() throws Exception {
-        String filename = "/no_such_directory/junitWriteToFile.txt";
-        expectedException.expect(FileNotFoundException.class);
-        TestUtil.writeToFile("foo", filename, "UTF-8");
-    }
-
-    @Test
     public void readResource() throws Exception {
-        String s = TestUtil.readResource("META-INF/hsql-test.properties");
-        Assert.assertNotNull("String should not be null", s);
+        String s = TestUtil.readResource("dbunit/testentity.xml");
+        assertNotNull(s, "String should not be null");
         String[] lines = s.split(System.lineSeparator());
-        Assert.assertEquals("Wrong number of lines: ", 12, lines.length);
-        Assert.assertEquals("Wrong content in line 10: ", "jpa.showSql=false", lines[9]);
+        assertEquals(9, lines.length, "Wrong number of lines: ");
+        assertEquals("</dataset>", lines[8], "Wrong content in line 10: ");
     }
 
     @Test
     public void readNonExistingResource() throws Exception {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Resource not found: no such resource");
-        TestUtil.readResource("no such resource");
+        Exception e = assertThrows(IllegalArgumentException.class, () -> TestUtil.readResource("no such resource"));
+        assertTrue(e.getMessage().contains("Resource not found: no such resource"));
     }
 
     @Test
     public void readResourceNullResourceName() throws Exception {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("resourceName must not be null");
-        TestUtil.readResource(null);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> TestUtil.readResource(null));
+        assertTrue(e.getMessage().contains("resourceName must not be null"));
     }
 
     @Test
     public void injectField() {
         Foo foo = new Foo();
-        Assert.assertEquals("Wrong value of s: ", "foo", foo.s());
+        assertEquals("foo", foo.s(), "Wrong value of s: ");
         TestUtil.injectField(foo, "s", "bar");
-        Assert.assertEquals("Wrong value of s: ", "bar", foo.s());
+        assertEquals("bar", foo.s(), "Wrong value of s: ");
+    }
+
+    @Test
+    public void injectFieldNullValue() {
+        Foo foo = new Foo();
+        TestUtil.injectField(foo, "s", null);
+        assertNull(foo.s(), "Expected foo.s to be null after field injection");
     }
 
     @Test
     public void injectFieldInSubClass() {
         Bar bar = new Bar();
-        Assert.assertEquals("Wrong value of s: ", "foo", bar.s());
+        assertEquals("foo", bar.s(), "Wrong value of s: ");
         TestUtil.injectField(bar, "s", "bar");
-        Assert.assertEquals("Wrong value of s: ", "bar", bar.s());
+        assertEquals("bar", bar.s(), "Wrong value of s: ");
     }
 
     @Test
     public void injectNonExistingField() {
         Object obj = new Object();
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage("Error injecting bar into field foo of object " + obj);
-        TestUtil.injectField(obj, "foo", "bar");
+        Exception e = assertThrows(IllegalStateException.class, () -> TestUtil.injectField(obj, "noSuchField", "foo"));
+        assertTrue(e.getMessage().contains("Error injecting foo into field noSuchField of object " + obj));
+    }
+
+    @Test
+    public void injectFieldInNullObject() {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> TestUtil.injectField("foo", null, "bar"));
+        assertEquals("Arguments must not be null: obj=foo, fieldName=null", e.getMessage());
+    }
+
+    @Test
+    public void injectFieldWithNullFieldName() {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> TestUtil.injectField(null, "foo", "bar"));
+        assertEquals("Arguments must not be null: obj=null, fieldName=foo", e.getMessage());
+    }
+
+    @Test
+    public void getFieldValue() throws Exception {
+        Foo foo = new Foo();
+        assertEquals("foo", TestUtil.getFieldValue(foo, "s"));
+    }
+
+    @Test
+    public void getValueOfNonExistingField() {
+        Foo foo = new Foo();
+        Exception e = assertThrows(IllegalStateException.class, () -> TestUtil.getFieldValue(foo, "noSuchField"));
+        assertEquals("Error getting value of field noSuchField of object " + foo, e.getMessage());
+    }
+
+    @Test
+    public void getValueOfNullObject() {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> TestUtil.getFieldValue(null, "foo"));
+        assertEquals("Arguments must not be null: obj=null, fieldName=foo", e.getMessage());
+    }
+
+    @Test
+    public void getValueOfNullFieldName() {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> TestUtil.getFieldValue("foo", null));
+        assertEquals("Arguments must not be null: obj=foo, fieldName=null", e.getMessage());
     }
 
     private static class Foo {

@@ -1,26 +1,20 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved. DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE
+ * HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * This code is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation. Oracle designates this particular file as subject to the "Classpath" exception as provided by
+ * Oracle in the LICENSE file that accompanied this code.
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License version 2 for more details (a copy is included in
+ * the LICENSE file that accompanied this code).
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version 2 along with this work; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA or visit www.oracle.com if you need additional information or
+ * have any questions.
  */
 
 package com.reallifedeveloper.tools;
@@ -48,8 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This FullThreadDump class demonstrates the capability to get a full thread
- * dump and also detect deadlock remotely.
+ * This FullThreadDump class demonstrates the capability to get a full thread dump and also detect deadlock remotely.
  * <p>
  * Based on code by Sun Microsystems, Inc. and Oracle.
  *
@@ -57,7 +50,8 @@ import org.slf4j.LoggerFactory;
  * @author Neal Gafter
  * @author RealLifeDeveloper
  */
-public class FullThreadDump {
+@SuppressWarnings("PMD") // This builds on code from other sources
+public final class FullThreadDump {
 
     private static final Logger LOG = LoggerFactory.getLogger(FullThreadDump.class);
 
@@ -66,11 +60,10 @@ public class FullThreadDump {
     private JMXConnector jmxc;
 
     /**
-     * Creates a new <code>FullThreadDump</code> object that is connected to a JMX server on the
-     * given host and port.
+     * Creates a new {@code FullThreadDump} object that is connected to a JMX server on the given host and port.
      *
      * @param hostname the name of the host running the JMX server
-     * @param port the port number the JMX server is listening on
+     * @param port     the port number the JMX server is listening on
      *
      * @throws IOException if connection to the JMX server fails
      */
@@ -92,10 +85,9 @@ public class FullThreadDump {
     }
 
     /**
-     * Creates a new <code>FullThreadDump</code> object that is connected to a JMX server at the given
-     * <code>JMXServiceURL</code>.
+     * Creates a new {@code FullThreadDump} object that is connected to a JMX server at the given {@code JMXServiceURL}.
      *
-     * @param url the <code>JMXServiceURL</code> of the JMX server
+     * @param url the {@code JMXServiceURL} of the JMX server
      *
      * @throws IOException if connection to the JMX server fails
      */
@@ -104,8 +96,8 @@ public class FullThreadDump {
     }
 
     /**
-     * Creates a thread dump with information about all the threads running in the Java process
-     * being monitored by the JMX server connected to.
+     * Creates a thread dump with information about all the threads running in the Java process being monitored by the JMX server connected
+     * to.
      * <p>
      * The information is meant to be read by humans and is not easily parsable.
      *
@@ -124,21 +116,21 @@ public class FullThreadDump {
 
     /**
      * Connect to a JMX agent of a given URL.
+     *
      * @throws IOException
      */
     private void connect(JMXServiceURL url) throws IOException {
         Map<String, Object> env = new HashMap<>();
-        //        String[] credentials = { "controlRole", "control" };
-        //        env.put(JMXConnector.CREDENTIALS, credentials);
-        //        env.put("com.sun.jndi.rmi.factory.socket", new SslRMIClientSocketFactory());
+        // String[] credentials = { "controlRole", "control" };
+        // env.put(JMXConnector.CREDENTIALS, credentials);
+        // env.put("com.sun.jndi.rmi.factory.socket", new SslRMIClientSocketFactory());
         this.jmxc = JMXConnectorFactory.connect(url, env);
-        //        this.jmxc = JMXConnectorFactory.connect(url);
+        // this.jmxc = JMXConnectorFactory.connect(url);
         this.server = jmxc.getMBeanServerConnection();
     }
 
     /**
-     * Connects to a JMX server at the given host and port number and creates a thread dump that is
-     * logged on INFO level.
+     * Connects to a JMX server at the given host and port number and creates a thread dump that is logged on INFO level.
      *
      * @param args should be one string on the form "hostname:port", e.g., "localhost:4711"
      *
@@ -177,10 +169,9 @@ public class FullThreadDump {
     }
 
     /**
-     * Example of using the java.lang.management API to dump stack trace and to
-     * perform deadlock detection.
+     * Example of using the java.lang.management API to dump stack trace and to perform deadlock detection.
      */
-    private static class ThreadMonitor {
+    private static final class ThreadMonitor {
 
         private static final List<String> THREAD_INFO = new ArrayList<>();
 
@@ -189,8 +180,7 @@ public class FullThreadDump {
         private ThreadMXBean tmbean;
 
         /**
-         * Constructs a ThreadMonitor object to get thread information in a remote
-         * JVM.
+         * Constructs a ThreadMonitor object to get thread information in a remote JVM.
          */
         ThreadMonitor(MBeanServerConnection server) throws IOException {
             this.tmbean = newPlatformMXBeanProxy(server, THREAD_MXBEAN_NAME, ThreadMXBean.class);
@@ -266,8 +256,7 @@ public class FullThreadDump {
         }
 
         /**
-         * Checks if any threads are deadlocked. If any, save the thread dump
-         * information.
+         * Checks if any threads are deadlocked. If any, save the thread dump information.
          */
         public boolean findDeadlock() {
             long[] tids = tmbean.findDeadlockedThreads();

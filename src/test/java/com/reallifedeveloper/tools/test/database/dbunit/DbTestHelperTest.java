@@ -1,28 +1,29 @@
 package com.reallifedeveloper.tools.test.database.dbunit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.datatype.IDataTypeFactory;
 import org.dbunit.operation.DatabaseOperation;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "classpath:META-INF/spring-context-rld-build-tools-test.xml" })
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = DatabaseTestConfiguration.class)
 public class DbTestHelperTest {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Autowired
     private DataSource ds;
@@ -32,15 +33,13 @@ public class DbTestHelperTest {
 
     @Test
     public void normalUseWithDtd() throws Exception {
-        IDataSet dataSet =
-                DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", "/dbunit/testentity.xml");
+        IDataSet dataSet = DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", "/dbunit/testentity.xml");
         verifyDataSet(dataSet, dataTypeFactory, 3);
     }
 
     @Test
     public void normalUseWithDtdAndWithoutDataTypeFactory() throws Exception {
-        IDataSet dataSet =
-                DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", "/dbunit/single_testentity.xml");
+        IDataSet dataSet = DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", "/dbunit/single_testentity.xml");
         verifyDataSet(dataSet, null, 1);
     }
 
@@ -50,66 +49,67 @@ public class DbTestHelperTest {
         verifyDataSet(dataSet, dataTypeFactory, 3);
     }
 
-    private void verifyDataSet(IDataSet dataSet, IDataTypeFactory dtf, int expectedNumberOfRows)
-            throws Exception, SQLException {
-        DbTestHelper dbTestHelper = new DbTestHelper(ds, dataSet, null, dtf);
+    private void verifyDataSet(IDataSet dataSet, IDataTypeFactory dtf, int expectedNumberOfRows) throws Exception, SQLException {
+        DbTestHelper dbTestHelper = new DbTestHelper(ds, dataSet, null, Optional.ofNullable(dtf));
         dbTestHelper.setSetUpOperation(DatabaseOperation.CLEAN_INSERT);
         dbTestHelper.setTearDownOperation(DatabaseOperation.DELETE_ALL);
         dbTestHelper.init();
         ResultSet rs = ds.getConnection().createStatement().executeQuery("SELECT * FROM TEST_ENTITY");
         int numRows = 0;
         while (rs.next()) {
-            Assert.assertNotNull("ID should not be null", rs.getDouble("ID"));
-            Assert.assertNotNull("NAME should not be null", rs.getString("NAME"));
+            assertNotNull(rs.getDouble("ID"), "ID should not be null");
+            assertNotNull(rs.getString("NAME"), "NAME should not be null");
             numRows++;
         }
-        Assert.assertEquals("Wrong number of rows: ", expectedNumberOfRows, numRows);
+        assertEquals(expectedNumberOfRows, numRows, "Wrong number of rows: ");
         dbTestHelper.clean();
         rs = ds.getConnection().createStatement().executeQuery("SELECT * FROM TEST_ENTITY");
-        Assert.assertFalse("Database should be empty after clean", rs.next());
+        assertFalse(rs.next(), "Database should be empty after clean");
     }
 
     @Test
     public void readDataSetFromClasspathNonExistingDtd() throws Exception {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("DTD not found on classpath: /dbunit/no_such_file");
-        DbTestHelper.readDataSetFromClasspath("/dbunit/no_such_file", "/dbunit/testentity.xml");
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> DbTestHelper.readDataSetFromClasspath("/dbunit/no_such_file", "/dbunit/testentity.xml"));
+        assertEquals("DTD not found on classpath: /dbunit/no_such_file", e.getMessage());
     }
 
     @Test
     public void readDataSetFromClasspathNonExistingResourceName() throws Exception {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Dataset not found on classpath: /dbunit/no_such_file");
-        DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", "/dbunit/no_such_file");
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", "/dbunit/no_such_file"));
+        assertEquals("Dataset not found on classpath: /dbunit/no_such_file", e.getMessage());
     }
 
     @Test
     public void readDataSetFromClasspathNullResourceNames() throws Exception {
         String[] resourceNames = null;
-        Assert.assertNull("Reading data from null resources should be null",
-                DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", resourceNames));
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", resourceNames));
+        assertEquals("You must provide at least one dataSetResourceName", e.getMessage());
     }
 
     @Test
     public void readDataSetFromClasspathEmptyResourceNames() throws Exception {
         String[] resourceNames = {};
-        Assert.assertNull("Reading data from null resources should be null",
-                DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", resourceNames));
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", resourceNames));
+        assertEquals("You must provide at least one dataSetResourceName", e.getMessage());
+
     }
 
     @Test
     public void constructorNullDataSource() throws Exception {
-        IDataSet dataSet =
-                DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", "/dbunit/testentity.xml");
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Arguments must not be null: dataSource=null");
-        new DbTestHelper(null, dataSet, null, dataTypeFactory);
+        IDataSet dataSet = DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", "/dbunit/testentity.xml");
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> new DbTestHelper(null, dataSet, null, Optional.of(dataTypeFactory)));
+        assertTrue(e.getMessage().contains("Arguments must not be null: dataSource=null"));
     }
 
     @Test
     public void constructorNullDataSet() throws Exception {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Arguments must not be null: dataSource=" + ds + ", dataSet=null");
-        new DbTestHelper(ds, null, null, dataTypeFactory);
+        Exception e = assertThrows(IllegalArgumentException.class, () -> new DbTestHelper(ds, null, null, Optional.of(dataTypeFactory)));
+        assertTrue(e.getMessage().contains("Arguments must not be null: dataSource=" + ds + ", dataSet=null"));
     }
+
 }

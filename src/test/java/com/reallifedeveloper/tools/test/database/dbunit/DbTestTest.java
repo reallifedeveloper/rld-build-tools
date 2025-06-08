@@ -1,17 +1,23 @@
 package com.reallifedeveloper.tools.test.database.dbunit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Optional;
+
 import javax.sql.DataSource;
 
 import org.dbunit.dataset.datatype.IDataTypeFactory;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "classpath:META-INF/spring-context-rld-build-tools-test.xml" })
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = DatabaseTestConfiguration.class)
 public class DbTestTest extends AbstractDbTest {
 
     @Autowired
@@ -29,8 +35,8 @@ public class DbTestTest extends AbstractDbTest {
 
     @Test
     public void testRepository() {
-        Assert.assertEquals("Wrong name: ", "foo", repository.findOne(42L).name());
-        Assert.assertEquals("Wrong name: ", "bar", repository.findOne(4711L).name());
+        assertEquals("foo", repository.findById(42L).get().name(), "Wrong name: ");
+        assertEquals("bar", repository.findById(4711L).get().name(), "Wrong name: ");
     }
 
     @Test
@@ -43,15 +49,15 @@ public class DbTestTest extends AbstractDbTest {
     @Test
     public void constructorTwoArgs() {
         DbTest dbTest = new DbTest("foo", "bar");
-        Assert.assertEquals("Wrong schema name: ", "foo", dbTest.getSchemaName());
-        Assert.assertNull("DTD resource name should be null", dbTest.getDataSetDtdResourceName());
-        Assert.assertEquals("Wrong number of data set resource names: ", 1, dbTest.getDataSetResourceNames().length);
-        Assert.assertNull("Data type factory should be null", dbTest.getDataTypeFactory());
+        assertEquals("foo", dbTest.getSchemaName(), "Wrong schema name: ");
+        assertNull(dbTest.getDataSetDtdResourceName(), "DTD resource name should be null");
+        assertEquals(1, dbTest.getDataSetResourceNames().length, "Wrong number of data set resource names: ");
+        assertTrue(dbTest.getDataTypeFactory().isEmpty(), "Data type factory should be empty");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void constructorThreeArgsNullDataSetResourceNames() {
-        new DbTest("foo", "bar", (String[]) null);
+        assertThrows(IllegalArgumentException.class, () -> new DbTest("foo", "bar", (String[]) null));
     }
 
     @Override
@@ -60,8 +66,8 @@ public class DbTestTest extends AbstractDbTest {
     }
 
     @Override
-    protected IDataTypeFactory getDataTypeFactory() {
-        return dataTypeFactory;
+    protected Optional<IDataTypeFactory> getDataTypeFactory() {
+        return Optional.ofNullable(dataTypeFactory);
     }
 
     private static class DbTest extends AbstractDbTest {
@@ -74,6 +80,7 @@ public class DbTestTest extends AbstractDbTest {
         }
 
         @Override
+        @SuppressWarnings("checkstyle:noReturnNull")
         protected DataSource getDataSource() {
             return null;
         }

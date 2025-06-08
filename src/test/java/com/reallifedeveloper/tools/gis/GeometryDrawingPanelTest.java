@@ -4,15 +4,13 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 
 import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.junit.Test;
-import org.mockito.Matchers;
+import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKTReader;
 import org.mockito.Mockito;
-
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.Polygon;
-import com.vividsolutions.jts.io.ParseException;
-import com.vividsolutions.jts.io.WKTReader;
 
 public class GeometryDrawingPanelTest {
 
@@ -21,7 +19,7 @@ public class GeometryDrawingPanelTest {
         Graphics2D graphics = createGrahpicsMock();
         GeometryDrawingPanel panel = new GeometryDrawingPanel();
         panel.paintComponent(graphics);
-        Mockito.verify(graphics, Mockito.never()).draw(Matchers.anyObject());
+        Mockito.verify(graphics, Mockito.never()).draw(Mockito.any());
     }
 
     @Test
@@ -30,7 +28,7 @@ public class GeometryDrawingPanelTest {
         GeometryDrawingPanel panel = createTestDrawingPanel();
         panel.paintComponent(graphics);
         Mockito.verify(graphics, Mockito.times(3)).setPaint(Color.BLUE);
-        Mockito.verify(graphics, Mockito.times(3)).draw(Matchers.anyObject());
+        Mockito.verify(graphics, Mockito.times(3)).draw(Mockito.any());
     }
 
     @Test
@@ -39,10 +37,10 @@ public class GeometryDrawingPanelTest {
         GeometryDrawingPanel panel = createTestDrawingPanel();
         panel.clearGeometries();
         panel.paintComponent(graphics);
-        Mockito.verify(graphics, Mockito.never()).draw(Matchers.anyObject());
+        Mockito.verify(graphics, Mockito.never()).draw(Mockito.any());
     }
 
-    private Graphics2D createGrahpicsMock() {
+    private Graphics2D createGrahpicsMock() throws ParseException {
         Graphics2D graphics = Mockito.mock(Graphics2D.class, Mockito.withSettings().verboseLogging());
         Mockito.when(graphics.create()).thenReturn(Mockito.mock(Graphics2D.class));
         return graphics;
@@ -54,8 +52,8 @@ public class GeometryDrawingPanelTest {
         GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
         WKTReader wktReader = new WKTReader(geometryFactory);
 
-        LineString line = (LineString) wktReader.read(
-                "LINESTRING(20 20, 20 25, 25 25, " + "25 15, 15 15, 15 30, 30 30, 30 10, 10 10, 10 35, 35 35, 35 5)");
+        LineString line = (LineString) wktReader
+                .read("LINESTRING(20 20, 20 25, 25 25, " + "25 15, 15 15, 15 30, 30 30, 30 10, 10 10, 10 35, 35 35, 35 5)");
         panel.addGeometry(line);
 
         line = (LineString) wktReader.read("LINESTRING(-10 40, 5 50, 20 40, 35 50, 50 40)");

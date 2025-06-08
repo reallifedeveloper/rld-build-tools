@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
@@ -19,44 +20,40 @@ import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 import org.dbunit.operation.DatabaseOperation;
 
 /**
- * A helper class used by {@link AbstractDbTest}. It could be used directly by a test
- * class that for some reason cannot inherit from <code>AbstractDbTest</code>.
+ * A helper class used by {@link AbstractDbTest}. It could be used directly by a test class that for some reason cannot inherit from
+ * {@code AbstractDbTest}.
  *
  * @author RealLifeDeveloper
  *
  */
-public class DbTestHelper {
+public final class DbTestHelper {
 
     private final IDatabaseTester databaseTester;
 
     /**
-     * Creates a new <code>DbTestHelper</code>, with test data provided by the given
-     * <code>dataSet</code> and using the given <code>dataSource</code> to insert it.
-     * The database schema name may be provided (can be <code>null</code>), and the
-     * type of database can be defined using <code>dataTypeFactory</code>
-     * (can also be <code>null</code>).
+     * Creates a new {@code DbTestHelper}, with test data provided by the given {@code dataSet} and using the given
+     * {@code dataSource} to insert it. The database schema name may be provided (can be {@code null}), and the type of database
+     * can be defined using {@code dataTypeFactory} (can also be {@code null}).
      *
-     * @param dataSource the <code>DataSource</code> to use when inserting test data
-     * @param dataSet the DbUnit test data set to read
-     * @param schemaName the name of the database schema, or <code>null</code>
-     * @param dataTypeFactory an <code>IDataTypeFactory</code>, or <code>null</code>
+     * @param dataSource      the {@code DataSource} to use when inserting test data
+     * @param dataSet         the DbUnit test data set to read
+     * @param schemaName      the name of the database schema, or {@code null}
+     * @param dataTypeFactory an {@code IDataTypeFactory}, or {@code null}
      */
-    public DbTestHelper(DataSource dataSource, IDataSet dataSet, String schemaName,
-            final IDataTypeFactory dataTypeFactory) {
-        if (dataSource == null || dataSet == null) {
-            throw new IllegalArgumentException("Arguments must not be null: dataSource=" + dataSource + ", dataSet="
-                    + dataSet + ", schemaName=" + schemaName + ", dataTypeFactory=" + dataTypeFactory);
+    public DbTestHelper(DataSource dataSource, IDataSet dataSet, String schemaName, final Optional<IDataTypeFactory> dataTypeFactory) {
+        if (dataSource == null || dataSet == null || dataTypeFactory == null) {
+            throw new IllegalArgumentException("Arguments must not be null: dataSource=" + dataSource + ", dataSet=" + dataSet
+                    + ", schemaName=" + schemaName + ", dataTypeFactory=" + dataTypeFactory);
         }
         databaseTester = new DataSourceDatabaseTester(dataSource, schemaName) {
-            // We override this method to configure the dataTypeFactory for the connection, to avoid warnings
-            // from DbUnit.
+            // We override this method to configure the dataTypeFactory for the connection, to avoid warnings from DbUnit.
             @Override
             public IDatabaseConnection getConnection() throws Exception {
                 IDatabaseConnection conn = super.getConnection();
-                if (dataTypeFactory != null) {
-                    conn.getConfig().setProperty(DatabaseConfig.PROPERTY_DATATYPE_FACTORY, dataTypeFactory);
+                dataTypeFactory.ifPresent(dtf -> {
+                    conn.getConfig().setProperty(DatabaseConfig.PROPERTY_DATATYPE_FACTORY, dtf);
                     conn.getConfig().setProperty(DatabaseConfig.FEATURE_ALLOW_EMPTY_FIELDS, true);
-                }
+                });
                 return conn;
             }
         };
@@ -64,46 +61,55 @@ public class DbTestHelper {
     }
 
     /**
-     * Reads XML data set files from the classpath resources pointed to by <code>dataSetResourceNames</code>,
-     * optionally validating using the DTD pointed to by <code>dataSetDtdResourceName</code>
-     * property.
+     * Reads XML data set files from the classpath resources pointed to by {@code dataSetResourceNames}, optionally validating using
+     * the DTD pointed to by {@code dataSetDtdResourceName} property.
      * <p>
-     * The <code>dataSetDtdResourceName</code> parameter may be <code>null</code>, in which case no
-     * validation is performed.
+     * The {@code dataSetDtdResourceName} parameter may be {@code null}, in which case no validation is performed.
      *
-     * @param dataSetDtdResourceName the name of the resource containing the DTD for test data files,
-     * or <code>null</code>
-     * @param dataSetResourceNames the names of the resources containing test data
+     * @param dataSetDtdResourceName the name of the resource containing the DTD for test data files, or {@code null}
+     * @param dataSetResourceNames   the names of the resources containing test data
      *
      * @return the test data set
      *
      * @throws DataSetException if some resource if malformed
-     * @throws IOException if reading a resource failed
+     * @throws IOException      if reading a resource failed
      */
     public static IDataSet readDataSetFromClasspath(String dataSetDtdResourceName, String... dataSetResourceNames)
             throws DataSetException, IOException {
         if (dataSetResourceNames == null || dataSetResourceNames.length == 0) {
-            return null;
+            throw new IllegalArgumentException("You must provide at least one dataSetResourceName");
         } else {
             FlatXmlDataSetBuilder builder = new FlatXmlDataSetBuilder();
-            if (dataSetDtdResourceName != null) {
-                InputStream is = DbTestHelper.class.getResourceAsStream(dataSetDtdResourceName);
+            builder.setColumnSensing(true);
+            addPotentialDtd(builder, dataSetDtdResourceName);
+            List<IDataSet> dataSets = readDataSets(builder, dataSetResourceNames);
+            return new CompositeDataSet(dataSets.toArray(new IDataSet[0]));
+        }
+    }
+
+    private static void addPotentialDtd(FlatXmlDataSetBuilder builder, String dataSetDtdResourceName) throws DataSetException, IOException {
+        if (dataSetDtdResourceName != null) {
+            try (InputStream is = DbTestHelper.class.getResourceAsStream(dataSetDtdResourceName)) {
                 if (is == null) {
                     throw new IllegalArgumentException("DTD not found on classpath: " + dataSetDtdResourceName);
                 }
                 builder.setMetaDataSetFromDtd(is);
             }
-            builder.setColumnSensing(true);
-            List<IDataSet> dataSets = new ArrayList<>();
-            for (String dataSetResourceName : dataSetResourceNames) {
-                InputStream is = DbTestHelper.class.getResourceAsStream(dataSetResourceName);
+        }
+    }
+
+    private static List<IDataSet> readDataSets(FlatXmlDataSetBuilder builder, String... dataSetResourceNames)
+            throws DataSetException, IOException {
+        List<IDataSet> dataSets = new ArrayList<>();
+        for (String dataSetResourceName : dataSetResourceNames) {
+            try (InputStream is = DbTestHelper.class.getResourceAsStream(dataSetResourceName)) {
                 if (is == null) {
                     throw new IllegalArgumentException("Dataset not found on classpath: " + dataSetResourceName);
                 }
                 dataSets.add(builder.build(is));
             }
-            return new CompositeDataSet(dataSets.toArray(new IDataSet[dataSets.size()]));
         }
+        return dataSets;
     }
 
     /**
@@ -111,6 +117,7 @@ public class DbTestHelper {
      *
      * @throws Exception if something goes wrong
      */
+    @SuppressWarnings("PMD.SignatureDeclareThrowsException")
     public void init() throws Exception {
         databaseTester.onSetup();
     }
@@ -120,6 +127,7 @@ public class DbTestHelper {
      *
      * @throws Exception if something goes wrong
      */
+    @SuppressWarnings("PMD.SignatureDeclareThrowsException")
     public void clean() throws Exception {
         databaseTester.onTearDown();
     }
@@ -127,7 +135,7 @@ public class DbTestHelper {
     /**
      * Change the operation performed before executing each test.
      * <p>
-     * The default setup operation is <code>DatabaseOperation.CLEAN_INSERT</code>.
+     * The default setup operation is {@code DatabaseOperation.CLEAN_INSERT}.
      *
      * @param setUpOperation the new setup operation to use
      */

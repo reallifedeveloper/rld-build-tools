@@ -12,8 +12,7 @@ public interface PrimaryKeyGenerator<ID> {
     /**
      * Gives the next primary key given the previous maximum primary key value.
      *
-     * @param previousMax the previous maximum primary key value of any saved entity, or <code>null</code> to
-     * start from scratch
+     * @param previousMax the previous maximum primary key value of any saved entity, or {@code null} to start from scratch
      *
      * @return the next primary key
      */

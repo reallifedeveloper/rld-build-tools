@@ -2,6 +2,7 @@ package com.reallifedeveloper.tools.test.database.dbunit;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
@@ -10,8 +11,8 @@ import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.datatype.IDataTypeFactory;
 import org.dbunit.ext.mssql.InsertIdentityOperation;
 import org.dbunit.operation.DatabaseOperation;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -20,8 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
  * An example of how to use this class:
  *
  * <pre>
- * &#64;RunWith(SpringJUnit4ClassRunner.class)
- * &#64;ContextConfiguration(locations = { "classpath:META-INF/spring-context.xml" })
+ * &#64;ExtendWith(SpringExtension.class)
+ * &#64;ContextConfiguration(classes = TestConfiguration.class)
  * public class MyDbTest extends AbstractDbTest {
  *     &#64;Autowired
  *     private DataSource ds;
@@ -69,10 +70,9 @@ public abstract class AbstractDbTest {
     private DbTestHelper dbTestHelper;
 
     /**
-     * Creates a new test instance, using the given schema and reading the
-     * DBUnit XML file found in the given classpath resource.
+     * Creates a new test instance, using the given schema and reading the DBUnit XML file found in the given classpath resource.
      *
-     * @param schemaName name of the database schema, or <code>null</code>
+     * @param schemaName          name of the database schema, or {@code null}
      * @param dataSetResourceName name of the classpath resource that contains DBUnit XML
      */
     protected AbstractDbTest(String schemaName, String dataSetResourceName) {
@@ -80,13 +80,11 @@ public abstract class AbstractDbTest {
     }
 
     /**
-     * Creates a new test instance, using the given schema and reading the
-     * DBUnit XML files and DTD found in the given classpath resources.
+     * Creates a new test instance, using the given schema and reading the DBUnit XML files and DTD found in the given classpath resources.
      *
-     * @param schemaName name of the database schema, or <code>null</code>
-     * @param dataSetDtdResourceName name of the classpath resource containing the DTD for the XML,
-     * or <code>null</code> to not validate
-     * @param dataSetResourceNames names of classpath resources containing DBUnit XML
+     * @param schemaName             name of the database schema, or {@code null}
+     * @param dataSetDtdResourceName name of the classpath resource containing the DTD for the XML, or {@code null} to not validate
+     * @param dataSetResourceNames   names of classpath resources containing DBUnit XML
      */
     protected AbstractDbTest(String schemaName, String dataSetDtdResourceName, String... dataSetResourceNames) {
         if (dataSetResourceNames == null) {
@@ -94,7 +92,7 @@ public abstract class AbstractDbTest {
         }
         this.schemaName = schemaName;
         this.dataSetDtdResourceName = dataSetDtdResourceName;
-        this.dataSetResourceNames = dataSetResourceNames;
+        this.dataSetResourceNames = dataSetResourceNames.clone();
     }
 
     /**
@@ -102,7 +100,8 @@ public abstract class AbstractDbTest {
      *
      * @throws Exception if something goes wrong
      */
-    @Before
+    @BeforeEach
+    @SuppressWarnings("PMD.SignatureDeclareThrowsException")
     public void setUpDatabase() throws Exception {
         dbTestHelper = new DbTestHelper(getDataSource(), getDataSet(), getSchemaName(), getDataTypeFactory());
         dbTestHelper.setSetUpOperation(getSetUpOperation());
@@ -115,7 +114,8 @@ public abstract class AbstractDbTest {
      *
      * @throws Exception if something goes wrong
      */
-    @After
+    @AfterEach
+    @SuppressWarnings("PMD.SignatureDeclareThrowsException")
     public void tearDownDatabase() throws Exception {
         if (dbTestHelper != null) {
             dbTestHelper.clean();
@@ -123,7 +123,7 @@ public abstract class AbstractDbTest {
     }
 
     /**
-     * Gives the name of the database schema. Can be <code>null</code>.
+     * Gives the name of the database schema. Can be {@code null}.
      *
      * @return the database schema name
      */
@@ -150,48 +150,40 @@ public abstract class AbstractDbTest {
     }
 
     /**
-     * Gives the data set used by DbUnit when testing. The default implementation reads
-     * XML files from the classpath resources pointed to by the <code>dataSetResourceNames</code>
-     * property, validating using the DTD pointed to by the <code>dataSetDtdResourceName</code>
-     * property.
+     * Gives the data set used by DbUnit when testing. The default implementation reads XML files from the classpath resources pointed to by
+     * the {@code dataSetResourceNames} property, validating using the DTD pointed to by the {@code dataSetDtdResourceName} property.
      * <p>
      * Override this method if you want to provide the DbUnit test data in some other way.
      *
      * @return the test data set
      *
      * @throws DataSetException if some resource if malformed
-     * @throws IOException if reading a resource failed
+     * @throws IOException      if reading a resource failed
      */
     protected IDataSet getDataSet() throws DataSetException, IOException {
         return DbTestHelper.readDataSetFromClasspath(getDataSetDtdResourceName(), getDataSetResourceNames());
     }
 
     /**
-     * Override this to point to your datasource. The datasource could, e.g., be
-     * injected by Spring.
+     * Override this to point to your datasource. The datasource could, e.g., be injected by Spring.
      *
-     * @return the <code>DataSource</code> to use
+     * @return the {@code DataSource} to use
      */
     protected abstract DataSource getDataSource();
 
     /**
-     * Gives the DbUnit <code>IDataTypeFactory</code> that matches the database used
-     * for testing, or <code>null</code> if the database type is left unspecified.
-     * If left unspecified, DbUnit will probably issue a lot of warnings about
-     * "potential problems".
+     * Gives the DbUnit {@code IDataTypeFactory} that matches the database used for testing, or {@code null} if the database type is left
+     * unspecified. If left unspecified, DbUnit will probably issue a lot of warnings about "potential problems".
      * <p>
-     * The default implementation returns <code>null</code>. Override this to return
-     * the right <code>IDataTypeFactory</code> for your database, e.g.,
-     * <code>org.dbunit.ext.mysql.MySqlDataTypeFactory</code> or
-     * <code>org.dbunit.ext.oracle.Oracle10DataTypeFactory</code>.
+     * The default implementation returns {@code null}. Override this to return the right {@code IDataTypeFactory} for your database, e.g.,
+     * {@code org.dbunit.ext.mysql.MySqlDataTypeFactory} or {@code org.dbunit.ext.oracle.Oracle10DataTypeFactory}.
      * <p>
-     * To make it easy to change to use a different database, the factory could be configured
-     * by Spring and injected into your test case.
+     * To make it easy to change to use a different database, the factory could be configured by Spring and injected into your test case.
      *
-     * @return the<code>IDataTypeFactory</code> to use
+     * @return the{@code IDataTypeFactory} to use
      */
-    protected IDataTypeFactory getDataTypeFactory() {
-        return null;
+    protected Optional<IDataTypeFactory> getDataTypeFactory() {
+        return Optional.empty();
     }
 
     /**
@@ -215,4 +207,17 @@ public abstract class AbstractDbTest {
     protected DatabaseOperation getTearDownOperation() {
         return DEFAULT_TEARDOWN_OPERATION;
     }
+
+    /**
+     * Make finalize method final to avoid "Finalizer attacks" and corresponding SpotBugs warning (CT_CONSTRUCTOR_THROW).
+     *
+     * @see <a href="https://wiki.sei.cmu.edu/confluence/display/java/OBJ11-J.+Be+wary+of+letting+constructors+throw+exceptions">
+     * Explanation of finalizer attack</a>
+     */
+    @Override
+    @SuppressWarnings({ "checkstyle:NoFinalizer", "PMD.EmptyFinalizer", "PMD.EmptyMethodInAbstractClassShouldBeAbstract" })
+    protected final void finalize() throws Throwable {
+        // Do nothing
+    }
+
 }

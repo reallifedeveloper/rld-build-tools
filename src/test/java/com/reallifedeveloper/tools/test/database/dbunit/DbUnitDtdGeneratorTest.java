@@ -1,84 +1,129 @@
 package com.reallifedeveloper.tools.test.database.dbunit;
 
-import java.io.FileNotFoundException;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.FileNotFoundException;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import com.reallifedeveloper.tools.test.LogbackTestUtil;
 
 public class DbUnitDtdGeneratorTest {
 
-    private static final String EXPECTED_DTD = "<!ELEMENT dataset (\n"
-            + "    DBUNITTESTENTITY*,\n"
-            + "    DBUNITTESTENTITY_TESTENTITY*,\n"
-            + "    TEST_ENTITY*)>\n"
-            + "\n"
-            + "<!ELEMENT DBUNITTESTENTITY EMPTY>\n"
-            + "<!ATTLIST DBUNITTESTENTITY\n"
-            + "    ID CDATA #REQUIRED\n"
-            + "    B CDATA #IMPLIED\n"
-            + "    BD CDATA #IMPLIED\n"
-            + "    BI CDATA #IMPLIED\n"
-            + "    BOOL CDATA #IMPLIED\n"
-            + "    C CDATA #IMPLIED\n"
-            + "    D CDATA #IMPLIED\n"
-            + "    DATE CDATA #IMPLIED\n"
-            + "    F CDATA #IMPLIED\n"
-            + "    L CDATA #IMPLIED\n"
-            + "    S CDATA #IMPLIED\n"
-            + "    STRING CDATA #IMPLIED\n"
-            + "    TESTENUM CDATA #IMPLIED\n"
-            + "    TESTENTITY_ID CDATA #IMPLIED\n"
-            + ">\n\n"
-            + "<!ELEMENT DBUNITTESTENTITY_TESTENTITY EMPTY>\n"
-            + "<!ATTLIST DBUNITTESTENTITY_TESTENTITY\n"
-            + "    DBUNIT_TEST_ENTITY_ID CDATA #REQUIRED\n"
-            + "    TEST_ENTITY_ID CDATA #REQUIRED\n"
-            + ">\n\n"
-            + "<!ELEMENT TEST_ENTITY EMPTY>\n"
-            + "<!ATTLIST TEST_ENTITY\n"
-            + "    ID CDATA #REQUIRED\n"
-            + "    NAME CDATA #IMPLIED\n"
-            + ">\n\n";
+    private static final String EXPECTED_DTD = """
+            <!ELEMENT dataset (
+                DBUNITTESTENTITY*,
+                DBUNITTESTENTITY_TESTENTITY*,
+                TEST_ENTITY*)>
+
+            <!ELEMENT DBUNITTESTENTITY EMPTY>
+            <!ATTLIST DBUNITTESTENTITY
+                ID CDATA #REQUIRED
+                B CDATA #IMPLIED
+                BD CDATA #IMPLIED
+                BI CDATA #IMPLIED
+                BOOL CDATA #IMPLIED
+                C CDATA #IMPLIED
+                D CDATA #IMPLIED
+                DATE CDATA #IMPLIED
+                F CDATA #IMPLIED
+                L CDATA #IMPLIED
+                S CDATA #IMPLIED
+                STRING CDATA #IMPLIED
+                TESTENUM CDATA #IMPLIED
+                TESTENTITY_ID CDATA #IMPLIED
+            >
+
+            <!ELEMENT DBUNITTESTENTITY_TESTENTITY EMPTY>
+            <!ATTLIST DBUNITTESTENTITY_TESTENTITY
+                DBUNIT_TEST_ENTITY_ID CDATA #REQUIRED
+                TEST_ENTITY_ID CDATA #REQUIRED
+            >
+
+            <!ELEMENT TEST_ENTITY EMPTY>
+            <!ATTLIST TEST_ENTITY
+                ID CDATA #REQUIRED
+                NAME CDATA #IMPLIED
+            >
+
+            """;
 
     @Test
     public void generateDtd() throws Exception {
-        DbUnitDtdGenerator dtdGenerator = new DbUnitDtdGenerator("/META-INF/spring-context-rld-build-tools-test.xml");
+        ApplicationContext applicationContext = new AnnotationConfigApplicationContext(DatabaseTestConfiguration.class);
+        DbUnitDtdGenerator dtdGenerator = new DbUnitDtdGenerator(applicationContext);
         String dtd = dtdGenerator.generateDtd();
-        Assert.assertEquals("Wrong DTD: ", EXPECTED_DTD, dtd);
+        assertDtd(EXPECTED_DTD, dtd);
     }
 
     @Test
     public void generateDtdWithoutDataTypeFactory() throws Exception {
-        DbUnitDtdGenerator dtdGenerator =
-                new DbUnitDtdGenerator("/META-INF/spring-context-rld-build-tools-test-no-datatypefactory.xml");
+        ApplicationContext applicationContext = new ClassPathXmlApplicationContext(
+                "/META-INF/spring-context-rld-build-tools-test-no-datatypefactory.xml");
+        DbUnitDtdGenerator dtdGenerator = new DbUnitDtdGenerator(applicationContext);
         String dtd = dtdGenerator.generateDtd();
-        Assert.assertEquals("Wrong DTD: ", EXPECTED_DTD, dtd);
+        assertDtd(EXPECTED_DTD, dtd);
     }
 
     @Test
-    public void main() throws Exception {
-        // Test that we don't get an exception.
+    public void mainWithConfigurationFile() throws Exception {
+        LogbackTestUtil.clearLoggingEvents();
         DbUnitDtdGenerator.main("/META-INF/spring-context-rld-build-tools-test.xml");
+        assertDtd(EXPECTED_DTD, LogbackTestUtil.getLoggingEvents().get(0).getFormattedMessage());
+    }
+
+    @Test
+    public void mainWithConfigurationClass() throws Exception {
+        LogbackTestUtil.clearLoggingEvents();
+        DbUnitDtdGenerator.main("com.reallifedeveloper.tools.test.database.dbunit.DatabaseTestConfiguration");
+        assertDtd(EXPECTED_DTD, LogbackTestUtil.getLoggingEvents().get(0).getFormattedMessage());
+    }
+
+    /**
+     * For some reason, the order of the attribues in thd DTD differs depending on if the application context is created using
+     * an @Configuration class or an XML file. We therefore sort the lines of the strings and assert that those are equal. This may not be
+     * perfect since some differences in order can also mean semantic differences, but I think it is good enough.
+     *
+     * @param expectedDtd the expected DTD
+     * @param actualDtd   the actual DTD
+     */
+    private static void assertDtd(String expectedDtd, String actualDtd) {
+        List<String> sortedExpectedDtd = splitAndSortString(expectedDtd);
+        List<String> sortedActualDtd = splitAndSortString(actualDtd);
+        assertEquals(sortedExpectedDtd, sortedActualDtd);
+    }
+
+    private static List<String> splitAndSortString(String s) {
+        return Arrays.asList(s.split("\n")).stream().sorted().toList();
     }
 
     @Test
     public void mainIncorrectArgument() throws Exception {
-        try {
-            DbUnitDtdGenerator.main("foo");
-            Assert.fail("Expected BeanDefinitionStoreException to be thrown");
-        } catch (BeanDefinitionStoreException e) {
-            Assert.assertEquals("Wrong root cause: ", FileNotFoundException.class, e.getCause().getClass());
-        }
+        Exception e = assertThrows(BeanDefinitionStoreException.class, () -> DbUnitDtdGenerator.main("foo"));
+        assertEquals(FileNotFoundException.class, e.getCause().getClass(), "Wrong root cause: ");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void mainNoArguments() throws Exception {
-        DbUnitDtdGenerator.main();
+        Exception e = assertThrows(IllegalArgumentException.class, () -> DbUnitDtdGenerator.main());
+        assertEquals(usage(), e.getMessage());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void mainTwoArguments() throws Exception {
-        DbUnitDtdGenerator.main("foo", "bar");
+        Exception e = assertThrows(IllegalArgumentException.class, () -> DbUnitDtdGenerator.main("foo", "bar"));
+        assertEquals(usage(), e.getMessage());
+    }
+
+    private static String usage() {
+        return "Usage: java com.reallifedeveloper.tools.test.database.dbunit.DbUnitDtdGenerator "
+                + "<classpath Spring config class or XML file>";
     }
 }

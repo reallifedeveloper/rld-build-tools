@@ -1,8 +1,5 @@
 <?xml version="1.0"?>
-
-<!DOCTYPE suppressions PUBLIC
-    "-//Puppy Crawl//DTD Suppressions 1.1//EN"
-    "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+<!DOCTYPE suppressions PUBLIC "-//Checkstyle//DTD SuppressionXpathFilter Experimental Configuration 1.2//EN" "https://checkstyle.org/dtds/suppressions_1_2_xpath_experimental.dtd">
 
 <suppressions>
     <suppress checks="MagicNumber" files="src[/\\]test[/\\]java" />
@@ -10,6 +7,10 @@
     <suppress id="noNewDate" files="src[/\\]test[/\\]java" />
     <suppress id="noSystemCurrentTimeMillies" files="src[/\\]test[/\\]java" />
     <suppress checks="JavadocPackage|JavadocMethod|JavadocType" files="src[/\\]test[/\\]java" />
+
+    <!--  Suppress for any classes that are annotated with "UtilityClass" or "SpringBootApplication"  -->
+    <suppress-xpath checks="HideUtilityClassConstructor"
+        query="//CLASS_DEF[//MODIFIERS/ANNOTATION[./IDENT[@text='UtilityClass' or @text='SpringBootApplication']]]" />
 
     <suppress checks="FileLength" files=".*\.txt$" />
     <suppress checks="FileLength" files=".*\.sql$" />

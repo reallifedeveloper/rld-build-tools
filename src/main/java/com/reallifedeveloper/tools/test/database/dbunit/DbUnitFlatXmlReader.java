@@ -6,27 +6,24 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.Table;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -37,32 +34,36 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.Table;
+
 import com.reallifedeveloper.tools.test.TestUtil;
 
 /**
- * A class to read a DBUnit flat XML dataset file and populate a <code>JpaRepository</code> using the
- * information in the file.
+ * A class to read a DBUnit flat XML dataset file and populate a {@code JpaRepository} using the information in the file.
  * <p>
- * This is useful for testing in-memory repositories using the same test cases as for real repository
- * implementations, and also for populating in-memory repositories for testing services, without having to
- * use a real database.
+ * This is useful for testing in-memory repositories using the same test cases as for real repository implementations, and also for
+ * populating in-memory repositories for testing services, without having to use a real database.
  * <p>
- * TODO: The current implementation only has basic support for "to many" associations (there must be a
- * &amp;JoinTable annotation on a field, with &amp;JoinColumn annotations) and for enums (an enum must be stored
- * as a string).
+ * TODO: The current implementation only has basic support for "to many" associations (there must be a &amp;JoinTable annotation on a field,
+ * with &amp;JoinColumn annotations), and for enums (an enum must be stored as a string).
  *
  * @author RealLifeDeveloper
  */
-public class DbUnitFlatXmlReader {
+@SuppressWarnings("PMD")
+public final class DbUnitFlatXmlReader {
 
     private static final Logger LOG = LoggerFactory.getLogger(DbUnitFlatXmlReader.class);
 
-    private DocumentBuilder documentBuilder;
-    private Set<Class<?>> classes = new HashSet<>();
-    private List<Object> entities = new ArrayList<>();
+    private final DocumentBuilder documentBuilder;
+    private final Set<Class<?>> classes = new HashSet<>();
+    private final List<Object> entities = new ArrayList<>();
 
     /**
-     * Creates a new <code>DbUnitFlatXmlReader</code>.
+     * Creates a new {@code DbUnitFlatXmlReader}.
      */
     public DbUnitFlatXmlReader() {
         try {
@@ -80,21 +81,20 @@ public class DbUnitFlatXmlReader {
     }
 
     /**
-     * Reads a DBUnit flat XML file from the named resource, populating the given repository with
-     * entities of the given type.
+     * Reads a DBUnit flat XML file from the named resource, populating the given repository with entities of the given type.
      *
-     * @param resourceName the classpath resource containing a DBUnit flat XML document
-     * @param repository the repository to populate with the entities from the XML document
-     * @param entityType the entity class to read
+     * @param resourceName   the classpath resource containing a DBUnit flat XML document
+     * @param repository     the repository to populate with the entities from the XML document
+     * @param entityType     the entity class to read
      * @param primaryKeyType the type of primary key the entities use
-     * @param <T> the type of entity to read
-     * @param <ID> the type of the primary key of the entities
+     * @param <T>            the type of entity to read
+     * @param <ID>           the type of the primary key of the entities
      *
-     * @throws IOException if reading the file failed
+     * @throws IOException  if reading the file failed
      * @throws SAXException if parsing the file failed
      */
-    public <T, ID extends Serializable> void read(String resourceName, JpaRepository<T, ID> repository,
-            Class<T> entityType, Class<ID> primaryKeyType) throws IOException, SAXException {
+    public <T, ID extends Serializable> void read(String resourceName, JpaRepository<T, ID> repository, Class<T> entityType,
+            Class<ID> primaryKeyType) throws IOException, SAXException {
         try (InputStream in = DbUnitFlatXmlReader.class.getResourceAsStream(resourceName)) {
             if (in == null) {
                 throw new FileNotFoundException(resourceName);
@@ -105,52 +105,14 @@ public class DbUnitFlatXmlReader {
 
             LOG.info("Reading from {}", resourceName);
             for (int i = 0; i < tableRows.getLength(); i++) {
-                Node tableRow = tableRows.item(i);
-                if (tableRow.getNodeType() == Node.ELEMENT_NODE) {
+                Node tableRowNode = (@NonNull Node) tableRows.item(i);
+                if (tableRowNode.getNodeType() == Node.ELEMENT_NODE) {
+                    Element tableRow = (Element) tableRowNode;
                     String tableName = tableRow.getNodeName();
                     if (tableName.equalsIgnoreCase(getTableName(entityType))) {
-                        T entity = createEntity(entityType);
-                        NamedNodeMap attributes = tableRow.getAttributes();
-                        for (int j = 0; j < attributes.getLength(); j++) {
-                            Node attribute = attributes.item(j);
-                            String fieldName = getFieldName(attribute.getNodeName(), entityType);
-                            String attributeValue = attribute.getNodeValue();
-                            setField(entity, fieldName, attributeValue, primaryKeyType);
-                        }
-                        repository.save(entity);
-                        entities.add(entity);
-                        classes.add(entity.getClass());
-                    } else if (isJoinTable(tableName)) {
-                        Field joinTableField = joinTableField(tableName);
-                        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                            @Override
-                            public Void run() {
-                                joinTableField.setAccessible(true);
-                                return null;
-                            }
-                        });
-                        ParameterizedType parameterizedType = (ParameterizedType) joinTableField.getGenericType();
-                        Class<?> targetType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
-                        JoinTable joinTable = joinTableField.getAnnotation(JoinTable.class);
-                        for (JoinColumn joinColumn : joinTable.joinColumns()) {
-                            for (JoinColumn inverseJoinColumn : joinTable.inverseJoinColumns()) {
-                                NamedNodeMap attributes = tableRow.getAttributes();
-                                String lhsPrimaryKey = null;
-                                String rhsPrimaryKey = null;
-                                for (int j = 0; j < attributes.getLength(); j++) {
-                                    Node attribute = attributes.item(j);
-                                    if (attribute.getNodeName().equalsIgnoreCase(joinColumn.name())) {
-                                        lhsPrimaryKey = attribute.getNodeValue();
-                                    } else if (attribute.getNodeName().equalsIgnoreCase(inverseJoinColumn.name())) {
-                                        rhsPrimaryKey = attribute.getNodeValue();
-                                    }
-                                }
-                                Object lhs = findEntity(lhsPrimaryKey, joinTableField.getDeclaringClass());
-                                Object rhs = findEntity(rhsPrimaryKey, targetType);
-                                Method add = joinTableField.getType().getMethod("add", Object.class);
-                                add.invoke(joinTableField.get(lhs), rhs);
-                            }
-                        }
+                        handleTableRow(tableRow, entityType, primaryKeyType, repository);
+                    } else {
+                        handlePotentialJoinTable(tableRowNode, tableName);
                     }
                 }
             }
@@ -159,20 +121,72 @@ public class DbUnitFlatXmlReader {
         }
     }
 
-    private boolean isJoinTable(String tableName) {
-        return joinTableField(tableName) != null;
+    private <T, ID extends Serializable> void handleTableRow(Element tableRow, Class<T> entityType, Class<ID> primaryKeyType,
+            JpaRepository<T, ID> repository) throws ReflectiveOperationException {
+        T entity = createEntity(entityType);
+        NamedNodeMap attributes = (@NonNull NamedNodeMap) tableRow.getAttributes();
+        for (int j = 0; j < attributes.getLength(); j++) {
+            Node attribute = (@NonNull Node) attributes.item(j);
+            String fieldName = getFieldName(attribute.getNodeName(), entityType);
+            String attributeValue = attribute.getNodeValue();
+            setField(entity, fieldName, attributeValue, primaryKeyType);
+        }
+        entity = repository.save(entity);
+        entities.add(entity);
+        classes.add(entity.getClass());
     }
 
-    private Field joinTableField(String tableName) {
+    private void handlePotentialJoinTable(Node tableRow, String tableName)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        joinTableField(tableName).ifPresent(joinTableField -> {
+            joinTableField.setAccessible(true);
+            ParameterizedType parameterizedType = (ParameterizedType) joinTableField.getGenericType();
+            Class<?> targetType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
+            JoinTable joinTable = joinTableField.getAnnotation(JoinTable.class);
+            assert joinTable != null : "JoinTable annotation should be present when the joinTableField method returns a non-empty value";
+            for (JoinColumn joinColumn : joinTable.joinColumns()) {
+                for (JoinColumn inverseJoinColumn : joinTable.inverseJoinColumns()) {
+                    addEntityFromJoinTable(tableRow, joinTableField, targetType, joinColumn, inverseJoinColumn);
+                }
+            }
+        });
+    }
+
+    private Optional<Field> joinTableField(String tableName) {
         for (Class<?> c : classes) {
             for (Field field : c.getDeclaredFields()) {
                 JoinTable joinTable = field.getAnnotation(JoinTable.class);
                 if (joinTable != null && tableName.equalsIgnoreCase(joinTable.name())) {
-                    return field;
+                    return Optional.of(field);
                 }
             }
         }
-        return null;
+        return Optional.empty();
+    }
+
+    private void addEntityFromJoinTable(Node tableRow, Field joinTableField, Class<?> targetType, JoinColumn joinColumn,
+            JoinColumn inverseJoinColumn) {
+        NamedNodeMap attributes = tableRow.getAttributes();
+        String lhsPrimaryKey = null;
+        String rhsPrimaryKey = null;
+        for (int j = 0; j < attributes.getLength(); j++) {
+            Node attribute = attributes.item(j);
+            if (attribute.getNodeName().equalsIgnoreCase(joinColumn.name())) {
+                lhsPrimaryKey = attribute.getNodeValue();
+            } else if (attribute.getNodeName().equalsIgnoreCase(inverseJoinColumn.name())) {
+                rhsPrimaryKey = attribute.getNodeValue();
+            }
+        }
+        Object lhs = findEntity(lhsPrimaryKey, joinTableField.getDeclaringClass());
+        Object rhs = findEntity(rhsPrimaryKey, targetType);
+        try {
+            Method add = joinTableField.getType().getMethod("add", Object.class);
+            add.invoke(joinTableField.get(lhs), rhs);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException("Method 'add' not found -- @JoinTable annotation should be on a Collection", e);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new IllegalStateException("Unexpected problem", e);
+        }
     }
 
     private <T> String getTableName(Class<T> entityType) {
@@ -186,51 +200,46 @@ public class DbUnitFlatXmlReader {
 
     private <T> String getFieldName(String attributeName, Class<T> entityType) {
         for (Field field : entityType.getDeclaredFields()) {
-            Column column = field.getAnnotation(Column.class);
-            if (column == null || column.name() == null) {
-                JoinColumn joinColumn = field.getAnnotation(JoinColumn.class);
-                if (joinColumn == null || joinColumn.name() == null) {
-                    if (field.getName().equalsIgnoreCase(attributeName)) {
-                        return field.getName();
-                    }
-                } else {
-                    if (joinColumn.name().equalsIgnoreCase(attributeName)) {
-                        return field.getName();
-                    }
-                }
-            } else {
-                if (column.name().equalsIgnoreCase(attributeName)) {
-                    return field.getName();
-                }
+            if (checkFieldName(attributeName, field)) {
+                return field.getName();
             }
         }
         if (entityType.getSuperclass() == null) {
-            throw new IllegalArgumentException("Cannot find any field matching attribute '" + attributeName
-                    + "' for " + entityType);
+            throw new IllegalArgumentException("Cannot find any field matching attribute '" + attributeName + "' for " + entityType);
         } else {
             return getFieldName(attributeName, entityType.getSuperclass());
         }
     }
 
-    private <T> T createEntity(Class<T> entityType) throws ReflectiveOperationException, SecurityException {
-        Constructor<T> constructor = entityType.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        T entity = constructor.newInstance();
-        return entity;
+    private boolean checkFieldName(String attributeName, Field field) {
+        Column column = field.getAnnotation(Column.class);
+        if (column == null || column.name() == null) {
+            JoinColumn joinColumn = field.getAnnotation(JoinColumn.class);
+            if (joinColumn == null || joinColumn.name() == null) {
+                return field.getName().equalsIgnoreCase(attributeName);
+            } else {
+                return joinColumn.name().equalsIgnoreCase(attributeName);
+            }
+        } else {
+            return column.name().equalsIgnoreCase(attributeName);
+        }
     }
 
-    private <T, ID> void setField(T entity, String fieldName, String attributeValue, Class<ID> primaryKeyType)
-            throws ReflectiveOperationException, SecurityException {
+    private <T> T createEntity(Class<T> entityType) throws ReflectiveOperationException {
+        Constructor<T> constructor = entityType.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        return constructor.newInstance();
+    }
+
+    private <T, ID> void setField(T entity, String fieldName, @Nullable String attributeValue, Class<ID> primaryKeyType)
+            throws ReflectiveOperationException {
         Field field = getField(entity, fieldName);
-        if (field == null) {
-            throw new NoSuchFieldException(fieldName);
-        }
         field.setAccessible(true);
         Object fieldValue = createObjectFromString(attributeValue, field, primaryKeyType);
         field.set(entity, fieldValue);
     }
 
-    private Field getField(Object entity, String fieldName) {
+    private Field getField(Object entity, String fieldName) throws NoSuchFieldException {
         Class<?> entityType = entity.getClass();
         while (entityType != null) {
             for (Field field : entityType.getDeclaredFields()) {
@@ -240,7 +249,7 @@ public class DbUnitFlatXmlReader {
             }
             entityType = entityType.getSuperclass();
         }
-        return null;
+        throw new NoSuchFieldException(fieldName);
     }
 
     private Object createObjectFromString(String s, Field field, Class<?> primaryKeyType) {
@@ -292,9 +301,6 @@ public class DbUnitFlatXmlReader {
         for (Object entity : entities) {
             if (entity.getClass().equals(entityType)) {
                 Field idField = getIdField(entity);
-                if (idField == null) {
-                    throw new IllegalStateException("Id field not found for entity " + entity);
-                }
                 idField.setAccessible(true);
                 try {
                     Object id = idField.get(entity);
@@ -302,8 +308,8 @@ public class DbUnitFlatXmlReader {
                         return entity;
                     }
                 } catch (IllegalAccessException e) {
-                    throw new IllegalStateException("Unexpected problem looking up entity of " + entityType
-                            + " with primary key " + strId, e);
+                    throw new IllegalStateException("Unexpected problem looking up entity of " + entityType + " with primary key " + strId,
+                            e);
                 }
             }
         }
@@ -320,7 +326,7 @@ public class DbUnitFlatXmlReader {
             }
             entityType = entityType.getSuperclass();
         }
-        return null;
+        throw new IllegalStateException("Id field not found for entity " + entity);
     }
 
 }

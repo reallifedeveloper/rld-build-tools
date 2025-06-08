@@ -1,0 +1,23 @@
+<configuration debug="false">
+
+    <!-- Make sure Logback does not log anything when starting -->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
+    <!-- This is the appender we use in tests that need to collect and verify log output -->
+    <appender name="LIST" class="ch.qos.logback.core.read.ListAppender" />
+
+    <!-- A console appender to be able to check if the log output looks good -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- encoders are assigned the type ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} -%kvp- %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.reallifedeveloper" level="debug" />
+
+    <root level="error">
+        <appender-ref ref="LIST" level="info" />
+        <appender-ref ref="STDOUT" level="debug" />
+    </root>
+</configuration>

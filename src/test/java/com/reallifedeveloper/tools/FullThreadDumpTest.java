@@ -1,5 +1,9 @@
 package com.reallifedeveloper.tools;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.List;
@@ -10,10 +14,9 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +26,7 @@ public class FullThreadDumpTest {
 
     private JMXConnectorServer connector;
 
-    @Before
+    @BeforeEach
     public void init() throws Exception {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         JMXServiceURL url = new JMXServiceURL("service:jmx:rmi://");
@@ -31,7 +34,7 @@ public class FullThreadDumpTest {
         connector.start();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         connector.stop();
     }
@@ -49,7 +52,7 @@ public class FullThreadDumpTest {
                 numThreads++;
             }
         }
-        Assert.assertEquals("Wrong number of threads in dump: ", threads.size(), numThreads);
+        assertEquals(threads.size(), numThreads, "Wrong number of threads in dump: ");
     }
 
     @Test
@@ -78,9 +81,9 @@ public class FullThreadDumpTest {
                 thread2Found = true;
             }
         }
-        Assert.assertTrue("Deadlock not found", deadlockFound);
-        Assert.assertTrue("Thread 1 not found among deadlocked threads", thread1Found);
-        Assert.assertTrue("Thread 2 not found among deadlocked threads", thread2Found);
+        assertTrue(deadlockFound, "Deadlock not found");
+        assertTrue(thread1Found, "Thread 1 not found among deadlocked threads");
+        assertTrue(thread2Found, "Thread 2 not found among deadlocked threads");
     }
 
     @Test
@@ -91,29 +94,29 @@ public class FullThreadDumpTest {
         FullThreadDump.main("localhost:4711");
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void mainIncorrectPort() throws Exception {
-        FullThreadDump.main("localhost:" + TestUtil.findFreePort());
+        assertThrows(IOException.class, () -> FullThreadDump.main("localhost:" + TestUtil.findFreePort()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void mainNotAHostnamePort() throws Exception {
-        FullThreadDump.main("foo");
+        assertThrows(IllegalArgumentException.class, () -> FullThreadDump.main("foo"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void mainNotAPortNumber() throws Exception {
-        FullThreadDump.main("foo:bar");
+        assertThrows(IllegalArgumentException.class, () -> FullThreadDump.main("foo:bar"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void mainNegativePort() throws Exception {
-        FullThreadDump.main("foo:-4711");
+        assertThrows(IllegalArgumentException.class, () -> FullThreadDump.main("foo:-4711"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void mainNoArguments() throws Exception {
-        FullThreadDump.main((String[]) null);
+        assertThrows(IllegalArgumentException.class, () -> FullThreadDump.main((String[]) null));
     }
 
     private static class Deadlock {

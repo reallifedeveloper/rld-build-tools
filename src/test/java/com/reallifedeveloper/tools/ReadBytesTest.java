@@ -1,63 +1,74 @@
 package com.reallifedeveloper.tools;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.FileNotFoundException;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import com.reallifedeveloper.tools.test.Log4jTestAppender;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+
+import com.reallifedeveloper.tools.test.LogbackTestUtil;
 
 public class ReadBytesTest {
 
-    private Log4jTestAppender testAppender = new Log4jTestAppender();
-
-    @Before
+    @BeforeEach
     public void init() {
-        testAppender.setThreshold(Level.INFO);
-        Logger.getRootLogger().addAppender(testAppender);
+        LogbackTestUtil.clearLoggingEvents();
     }
 
     @Test
     public void logBytesFromUrl() throws Exception {
-        URL url = ReadBytesTest.class.getResource("/dbunit/testentity.xml");
+        // Given
+        URL url = getClass().getResource("/dbunit/testentity.xml");
+
+        // When
         ReadBytes.logBytesFromUrl(url);
-        List<LoggingEvent> loggingEvents = testAppender.loggingEvents();
-        Assert.assertEquals("Wrong number of logging events: ", 15, loggingEvents.size());
+
+        // Then
+        List<ILoggingEvent> loggingEvents = LogbackTestUtil.getLoggingEvents();
+        assertEquals(15, loggingEvents.size(), "Wrong number of logging events: ");
         String xmlHeader = "3C 3F 78 6D 6C"; // <?xml
-        Assert.assertTrue("First logging event should start with '" + xmlHeader + "'",
-                loggingEvents.get(0).getMessage().toString().startsWith(xmlHeader));
+        assertTrue(loggingEvents.get(0).getMessage().toString().startsWith(xmlHeader),
+                "First logging event should start with '" + xmlHeader + "'");
     }
 
-    @Test(expected = FileNotFoundException.class)
+    @Test
     public void logBytesFromNonExistingUrl() throws Exception {
-        URL url = new URL("file:///no_such_file");
-        ReadBytes.logBytesFromUrl(url);
+        URL url = new URI("file:///no_such_file").toURL();
+        assertThrows(FileNotFoundException.class, () -> ReadBytes.logBytesFromUrl(url));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void logBytesFromNullUrl() throws Exception {
-        ReadBytes.logBytesFromUrl(null);
+        assertThrows(IllegalArgumentException.class, () -> ReadBytes.logBytesFromUrl(null));
     }
 
     @Test
     public void main() throws Exception {
-        URL url = ReadBytesTest.class.getResource("/dbunit/testentity.xml");
+        // Given
+        URL url = getClass().getResource("/dbunit/testentity.xml");
+
+        // When
         ReadBytes.main(url.toExternalForm());
-        List<LoggingEvent> loggingEvents = testAppender.loggingEvents();
-        Assert.assertEquals("Wrong number of logging events: ", 15, loggingEvents.size());
+
+        // Then
+        List<ILoggingEvent> loggingEvents = LogbackTestUtil.getLoggingEvents();
+        assertEquals(15, loggingEvents.size(), "Wrong number of logging events: ");
         String xmlHeader = "3C 3F 78 6D 6C"; // <?xml
-        Assert.assertTrue("First logging event should start with '" + xmlHeader + "'",
-                loggingEvents.get(0).getMessage().toString().startsWith(xmlHeader));
+        assertTrue(loggingEvents.get(0).getMessage().toString().startsWith(xmlHeader),
+                "First logging event should start with '" + xmlHeader + "'");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void mainWrongNumberOfArgument() throws Exception {
-        ReadBytes.main("foo", "bar");
+        assertThrows(IllegalArgumentException.class, () -> ReadBytes.main("foo", "bar"));
     }
+
 }

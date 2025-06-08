@@ -1,19 +1,20 @@
 package com.reallifedeveloper.tools.test;
 
 import java.io.BufferedWriter;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.lang.reflect.Field;
 import java.net.ServerSocket;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Scanner;
+
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Miscellaneous utility methods that are useful when testing.
@@ -46,22 +47,19 @@ public final class TestUtil {
      * @throws IOException if an I/O error occurs when trying to open a socket
      */
     public static int findFreePort() throws IOException {
-        int port = -1;
         try (ServerSocket server = new ServerSocket(0)) {
-            port = server.getLocalPort();
+            return server.getLocalPort();
         }
-        return port;
     }
 
     /**
-     * Parses a date string on the form {@value #DATE_FORMAT} and returns the corresponding
-     * <code>java.util.Date</code> object.
+     * Parses a date string on the form {@value #DATE_FORMAT} and returns the corresponding {@code java.util.Date} object.
      *
      * @param date the date string to parse, should be on the form {@value #DATE_FORMAT}
      *
-     * @return the <code>java.util.Date</code> corresponding to <code>date</code>
+     * @return the {@code java.util.Date} corresponding to {@code date}
      *
-     * @throws IllegalArgumentException if <code>date</code> cannot be parsed
+     * @throws IllegalArgumentException if {@code date} cannot be parsed
      */
     public static Date parseDate(String date) {
         if (date == null) {
@@ -76,14 +74,13 @@ public final class TestUtil {
     }
 
     /**
-     * Parses a date and time string on the form {@value #DATE_TIME_FORMAT} and returns the
-     * corresonding <code>java.util.Date</code> object.
+     * Parses a date and time string on the form {@value #DATE_TIME_FORMAT} and returns the corresonding {@code java.util.Date} object.
      *
      * @param dateTime the date+time string to parse, should be on the form {@value #DATE_TIME_FORMAT}
      *
-     * @return the <code>java.util.Date</code> corresponding to <code>dateTime</code>
+     * @return the {@code java.util.Date} corresponding to {@code dateTime}
      *
-     * @throws IllegalArgumentException if <code>dateTime</code> cannot be parsed
+     * @throws IllegalArgumentException if {@code dateTime} cannot be parsed
      */
     public static Date parseDateTime(String dateTime) {
         if (dateTime == null) {
@@ -100,15 +97,14 @@ public final class TestUtil {
     /**
      * Writes a string to a file using the given character encoding.
      *
-     * @param s the string to write
+     * @param s        the string to write
      * @param filename the name of the file to write to
-     * @param charsetName the name of the character encoding to use, e.g., "UTF-8"
+     * @param charset  the character set to use, e.g., {@code java.nio.charset.StandardCharsets.UTF_8}
      *
      * @throws IOException if writing to the file failed
      */
-    public static void writeToFile(String s, String filename, String charsetName) throws IOException {
-        try (BufferedWriter writer =
-                new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), charsetName))) {
+    public static void writeToFile(String s, String filename, Charset charset) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(filename), charset)) {
             writer.write(s);
         }
     }
@@ -118,7 +114,7 @@ public final class TestUtil {
      *
      * @param resourceName the name of the classpath resource to read
      *
-     * @return a string representation of the classpath resource <code>resourceName</code>
+     * @return a string representation of the classpath resource {@code resourceName}
      *
      * @throws IOException if reading the resource failed
      */
@@ -133,8 +129,7 @@ public final class TestUtil {
             }
             try (Scanner s = new Scanner(is, "UTF-8")) {
                 while (s.hasNextLine()) {
-                    sb.append(s.nextLine());
-                    sb.append(System.lineSeparator());
+                    sb.append(s.nextLine()).append(System.lineSeparator());
                 }
                 return sb.toString();
             }
@@ -144,30 +139,50 @@ public final class TestUtil {
     /**
      * Injects a value into an object's field, which may be private.
      *
-     * @param obj the object in which to inject the value
+     * @param obj       the object in which to inject the value
      * @param fieldName the name of the field
-     * @param value the value to inject
+     * @param value     the value to inject
      *
-     * @throws IllegalStateException if injection failure
+     * @throws IllegalArgumentException if {@code obj} or {@code fieldName} is {@code null}
+     * @throws IllegalStateException    if reflecction failure
      */
+    @SuppressWarnings("PMD.AvoidAccessibilityAlteration")
     public static void injectField(Object obj, String fieldName, Object value) {
         try {
             Field field = getField(obj, fieldName);
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    field.setAccessible(true);
-                    return null;
-                }
-            });
+            field.setAccessible(true);
             field.set(obj, value);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new IllegalStateException(
-                    "Error injecting " + value + " into field " + fieldName + " of object " + obj, e);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Error injecting " + value + " into field " + fieldName + " of object " + obj, e);
+        }
+    }
+
+    /**
+     * Gives the value of an object's field, which may be private.
+     *
+     * @param obj       the object containing the field
+     * @param fieldName the name of the field
+     *
+     * @return the value of the field {@code fieldName} in the object {@code obj}
+     *
+     * @throws IllegalArgumentException if {@code obj} or {@code fieldName} is {@code null}
+     * @throws IllegalStateException    if reflection failure
+     */
+    @SuppressWarnings("PMD.AvoidAccessibilityAlteration")
+    public static @Nullable Object getFieldValue(Object obj, String fieldName) {
+        try {
+            Field field = getField(obj, fieldName);
+            field.setAccessible(true);
+            return field.get(obj);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Error getting value of field " + fieldName + " of object " + obj, e);
         }
     }
 
     private static Field getField(Object obj, String fieldName) throws NoSuchFieldException {
+        if (obj == null || fieldName == null) {
+            throw new IllegalArgumentException("Arguments must not be null: obj=%s, fieldName=%s".formatted(obj, fieldName));
+        }
         Class<?> entityType = obj.getClass();
         while (entityType != null) {
             for (Field field : entityType.getDeclaredFields()) {
@@ -179,4 +194,5 @@ public final class TestUtil {
         }
         throw new NoSuchFieldException(fieldName);
     }
+
 }
