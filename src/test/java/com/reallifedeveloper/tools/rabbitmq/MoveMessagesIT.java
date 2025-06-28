@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.Channel;
@@ -18,7 +19,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.GetResponse;
 
-// @Disabled("Since this requires RabbitMQ to be instaled on localhost, with the guest user and virtual host '/'")
+@Disabled("Since this requires RabbitMQ to be instaled on localhost, with the guest user and virtual host '/'")
 public class MoveMessagesIT {
 
     private static final String EXCHANGE = "foo.domain";
