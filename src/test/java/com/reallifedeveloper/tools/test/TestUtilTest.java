@@ -88,7 +88,7 @@ public class TestUtilTest {
 
     @Test
     public void writeToFile() throws Exception {
-        String filename = System.getProperty("java.io.tmpdir") + "junitWriteToFile.txt";
+        String filename = Paths.get(System.getProperty("java.io.tmpdir"), "junitWriteToFile.txt").toString();
         String s = "foo" + System.lineSeparator() + "bar" + System.lineSeparator() + "\u03B1\u03B2\u03B3";
         TestUtil.writeToFile(s, filename, StandardCharsets.UTF_8);
         List<String> lines = Files.readAllLines(Paths.get(filename), StandardCharsets.UTF_8);
@@ -107,7 +107,7 @@ public class TestUtilTest {
 
     @Test
     public void writeToReadOnlyFile() throws Exception {
-        String filename = System.getProperty("java.io.tmpdir") + "junitWriteToReadOnlyFile.txt";
+        String filename = Paths.get(System.getProperty("java.io.tmpdir"), "junitWriteToReadOnlyFile.txt").toString();
         File file = new File(filename);
         file.createNewFile();
         file.setWritable(false);
