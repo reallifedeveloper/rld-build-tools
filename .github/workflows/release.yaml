@@ -7,7 +7,7 @@ on:
     types:
       - completed
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 jobs:
@@ -19,3 +19,5 @@ jobs:
     steps:
     - name: Create release
       uses: reallifedeveloper/github-workflows/.github/actions/release@main
+      with:
+        main-branch: master
