@@ -15,9 +15,6 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
-    steps:
-    - name: Create release
-      uses: reallifedeveloper/github-workflows/.github/actions/release@main
-      secrets: inherit
+    uses: reallifedeveloper/github-workflows/.github/workflows/release.yaml@main
+    secrets: inherit
