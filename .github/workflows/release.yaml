@@ -10,12 +10,14 @@ on:
       - main
   workflow_dispatch:
 
+  permissions:
+    contents: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     steps:
     - name: Create release
-      uses: reallifedeveloper/github-workflows/.github/actions/release@v20250704.2
+      uses: reallifedeveloper/github-workflows/.github/actions/release@main
+      secrets: inherit

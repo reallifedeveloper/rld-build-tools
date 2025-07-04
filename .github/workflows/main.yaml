@@ -5,8 +5,9 @@ on:
     branches:
       - '*'
 
+permissions:
+  contents: read
+
 jobs:
   install:
-    uses: reallifedeveloper/github-workflows/.github/workflows/maven-install.yaml@v20250704.2
-    permissions:
-      contents: read
+    uses: reallifedeveloper/github-workflows/.github/workflows/maven-install.yaml@main
