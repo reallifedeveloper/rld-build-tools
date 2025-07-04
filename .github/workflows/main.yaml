@@ -8,3 +8,5 @@ on:
 jobs:
   install:
     uses: reallifedeveloper/github-workflows/.github/workflows/maven-install.yaml@main
+    permissions:
+      contents: read
