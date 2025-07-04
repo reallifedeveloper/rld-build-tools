@@ -7,7 +7,7 @@ on:
     types:
       - completed
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 jobs:
@@ -18,6 +18,4 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     steps:
     - name: Create release
-      uses: reallifedeveloper/github-workflows/.github/actions/release@main
-      with:
-        main-branch: master
+      uses: reallifedeveloper/github-workflows/.github/actions/release@v20250704.2

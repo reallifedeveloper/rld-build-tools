@@ -6,7 +6,7 @@ on:
 
 jobs:
   publish:
-    uses: reallifedeveloper/github-workflows/.github/workflows/maven-deploy.yaml@main
+    uses: reallifedeveloper/github-workflows/.github/workflows/maven-deploy.yaml@v20250704.2
     permissions:
       contents: read
     secrets: inherit
