@@ -10,4 +10,4 @@ permissions:
 
 jobs:
   install:
-    uses: reallifedeveloper/github-workflows/.github/workflows/maven-install.yaml@main
+    uses: reallifedeveloper/github-workflows/.github/workflows/maven-install.yaml@v20250705.2
