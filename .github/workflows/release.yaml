@@ -16,5 +16,5 @@ permissions:
 jobs:
   release:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
-    uses: reallifedeveloper/github-workflows/.github/workflows/release.yaml@v20250705.1
+    uses: reallifedeveloper/github-workflows/.github/workflows/release.yaml@main
     secrets: inherit
