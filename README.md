@@ -1,10 +1,10 @@
-RLD-BUILD-TOOLS
-===============
+RealLifeDeveloper rld-build-tools
+=================================
 
 This project is providing source code for the [RealLifeDeveloper blog](https://reallifedeveloper.com/). It provides Java support classes
 and configuration files that are used only during build-time, not runtime, e.g., code to support testing.
 
-You are free to use this code in your own projects as you see fit, see the [LICENSE](license).
+You are free to use this code in your own projects as you see fit, see the [license](LICENSE).
 
 If you encounter any problems or have any suggestions for improvements, please use the Github issue tracking system:
 https://github.com/reallifedeveloper/rld-build-tools/issues
