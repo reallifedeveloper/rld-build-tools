@@ -126,9 +126,14 @@ public class InMemoryJpaRepository<T, ID extends Comparable<ID>> extends Abstrac
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected Optional<Class<ID>> getIdClass(Object entity) {
         IdClass idClass = entity.getClass().getAnnotation(IdClass.class);
-        return Optional.ofNullable(idClass).map(IdClass::value);
+        if (idClass == null) {
+            return Optional.empty();
+        } else {
+            return Optional.ofNullable((Class<ID>) idClass.value());
+        }
     }
 
     @Override

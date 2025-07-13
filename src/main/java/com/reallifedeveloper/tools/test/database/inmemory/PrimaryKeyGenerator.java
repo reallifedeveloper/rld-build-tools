@@ -7,6 +7,7 @@ package com.reallifedeveloper.tools.test.database.inmemory;
  *
  * @param <ID> the type of the keys generated
  */
+@FunctionalInterface
 public interface PrimaryKeyGenerator<ID> {
 
     /**

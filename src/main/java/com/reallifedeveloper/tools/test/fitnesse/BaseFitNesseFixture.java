@@ -163,7 +163,7 @@ public class BaseFitNesseFixture {
      *      Explanation of finalizer attack</a>
      */
     @Override
-    @SuppressWarnings({ "checkstyle:NoFinalizer", "PMD.EmptyFinalizer", "PMD.EmptyMethodInAbstractClassShouldBeAbstract" })
+    @SuppressWarnings({ "checkstyle:NoFinalizer", "PMD.EmptyFinalizer" })
     protected final void finalize() throws Throwable {
         // Do nothing
     }

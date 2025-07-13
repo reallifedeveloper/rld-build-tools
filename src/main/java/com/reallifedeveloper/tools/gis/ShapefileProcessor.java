@@ -88,6 +88,7 @@ public final class ShapefileProcessor {
      * Defines some kind of processing av an {@code org.opengis.feature.Feature}. A {@code Feature} represents a composite object in a
      * shapefile that contains both a geographical or geometrical object and also other attributes.
      */
+    @FunctionalInterface
     public interface FeatureProcessor {
         /**
          * Processes the given {@code org.opengis.feature.Feature} in some way.
