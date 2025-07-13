@@ -1,0 +1,16 @@
+name: Update GitHub release with signed tar ball and zip files
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    uses: reallifedeveloper/github-workflows/.github/workflows/upload-signed-source.yaml@main
+    secrets: inherit
+    permissions:
+      contents: write

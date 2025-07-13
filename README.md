@@ -1,5 +1,5 @@
-RealLifeDeveloper rld-build-tools
-=================================
+RealLifeDeveloper: rld-build-tools
+==================================
 
 This project is providing source code for the [RealLifeDeveloper blog](https://reallifedeveloper.com/). It provides Java support classes
 and configuration files that are used only during build-time, not runtime, e.g., code to support testing.

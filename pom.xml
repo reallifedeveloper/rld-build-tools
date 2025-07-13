@@ -8,37 +8,14 @@
     <parent>
         <groupId>com.reallifedeveloper</groupId>
         <artifactId>rld-parent</artifactId>
-        <version>10</version>
+        <version>11</version>
     </parent>
 
     <artifactId>rld-build-tools</artifactId>
     <version>2.0.19-SNAPSHOT</version>
 
-    <name>${project.groupId}:${project.artifactId}</name>
+    <name>RealLifeDeveloper Build Tools</name>
     <description>Tools and configuration for RealLifeDeveloper projects that are only used at build-time, not runtime</description>
-    <url>http://reallifedeveloper.com/</url>
-
-    <licenses>
-        <license>
-            <name>MIT License</name>
-            <url>http://www.opensource.org/licenses/mit-license.php</url>
-        </license>
-    </licenses>
-
-    <organization>
-        <name>reallifedeveloper.com</name>
-        <url>http://reallifedeveloper.com/</url>
-    </organization>
-
-    <developers>
-        <developer>
-            <id>rld</id>
-            <name>RealLifeDeveloper</name>
-            <email>rld@reallifedeveloper.com</email>
-            <organization>reallifedeveloper.com</organization>
-            <organizationUrl>http://reallifedeveloper.com/</organizationUrl>
-        </developer>
-    </developers>
 
     <dependencies>
         <dependency>
@@ -142,21 +119,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-toolchains-plugin</artifactId>
-                <version>3.2.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>toolchain</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <toolchains>
-                        <jdk>
-                            <version>${java.version}</version>
-                        </jdk>
-                    </toolchains>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -209,22 +171,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <scm>
-        <url>https://github.com/reallifedeveloper/rld-build-tools</url>
-        <connection>scm:git:https://github.com/reallifedeveloper/rld-build-tools.git</connection>
-    </scm>
-
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
 
     <profiles>
         <profile>
