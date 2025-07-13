@@ -1,0 +1,14 @@
+name: Build and publish a Maven site
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    uses: reallifedeveloper/github-workflows/.github/workflows/maven-site.yaml@main
+    secrets: inherit
