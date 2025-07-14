@@ -6,9 +6,10 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   publish:
     uses: reallifedeveloper/github-workflows/.github/workflows/maven-deploy.yaml@main
     secrets: inherit
+    permissions:
+      packages: write
