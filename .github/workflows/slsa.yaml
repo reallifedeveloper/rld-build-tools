@@ -11,3 +11,5 @@ jobs:
       contents: read
       actions: read
     uses: slsa-framework/slsa-github-generator/.github/workflows/builder_maven_slsa3.yml@v2.1.0
+    with:
+      directory: slsa
