@@ -12,4 +12,5 @@ jobs:
     uses: reallifedeveloper/github-workflows/.github/workflows/maven-deploy.yaml@main
     secrets: inherit
     permissions:
+      contents: read
       packages: write
