@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -34,6 +35,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -54,6 +56,7 @@ import com.reallifedeveloper.tools.test.TestUtil;
  * @author RealLifeDeveloper
  */
 @SuppressWarnings("PMD")
+@SuppressFBWarnings(value = "IMPROPER_UNICODE", justification = "equalsIgnoreCase only being used to compare table, column or field names")
 public final class DbUnitFlatXmlReader {
 
     private static final Logger LOG = LoggerFactory.getLogger(DbUnitFlatXmlReader.class);
@@ -74,6 +77,13 @@ public final class DbUnitFlatXmlReader {
             dbf.setFeature("http://xml.org/sax/features/validation", false);
             dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
             dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            // Configuration to make the parser safe from XXE attacks while still allowing DTDs.
+            // See https://community.veracode.com/s/article/Java-Remediation-Guidance-for-XXE
+            dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            dbf.setXIncludeAware(false);
+            dbf.setExpandEntityReferences(false);
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             documentBuilder = dbf.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
             throw new IllegalStateException("Unexpected problem creating XML parser", e);
@@ -93,6 +103,7 @@ public final class DbUnitFlatXmlReader {
      * @throws IOException  if reading the file failed
      * @throws SAXException if parsing the file failed
      */
+    @SuppressFBWarnings(value = "XXE_DOCUMENT", justification = "XML parser hardened as much as possible, see constructor")
     public <T, ID extends Serializable> void read(String resourceName, JpaRepository<T, ID> repository, Class<T> entityType,
             Class<ID> primaryKeyType) throws IOException, SAXException {
         try (InputStream in = DbUnitFlatXmlReader.class.getResourceAsStream(resourceName)) {
@@ -103,7 +114,7 @@ public final class DbUnitFlatXmlReader {
             Element dataset = doc.getDocumentElement();
             NodeList tableRows = dataset.getChildNodes();
 
-            LOG.info("Reading from {}", resourceName);
+            LOG.info("Reading from {}", resourceName.replaceAll("[\r\n]", ""));
             for (int i = 0; i < tableRows.getLength(); i++) {
                 Node tableRowNode = (@NonNull Node) tableRows.item(i);
                 if (tableRowNode.getNodeType() == Node.ELEMENT_NODE) {

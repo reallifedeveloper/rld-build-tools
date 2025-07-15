@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.reallifedeveloper</groupId>
         <artifactId>rld-parent</artifactId>
-        <version>14</version>
+        <version>15</version>
     </parent>
 
     <artifactId>rld-build-tools</artifactId>

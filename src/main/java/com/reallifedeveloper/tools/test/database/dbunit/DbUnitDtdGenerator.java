@@ -19,12 +19,15 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Generates a DTD for DbUnit XML files used to populate the test database.
  *
  * @author RealLifeDeveloper
  *
  */
+@SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "This is intended to log the DTD including line breaks")
 public class DbUnitDtdGenerator {
 
     private static final Logger LOG = LoggerFactory.getLogger(DbUnitDtdGenerator.class);
@@ -71,8 +74,8 @@ public class DbUnitDtdGenerator {
     }
 
     /**
-     * Main method that prints the generated DTD to {@code System.out}. The only argument should be either the fully-qualified name of a
-     * Spring configuration class on the classpath, or the name of a Spring XML configuration file, also on the classpath.
+     * Main method that logs the generated DTD on info level. The only argument should be either the fully-qualified name of a Spring
+     * configuration class on the classpath, or the name of a Spring XML configuration file, also on the classpath.
      *
      * @param args should contain one argument, either configuration class or XML configuration file on classpath
      *

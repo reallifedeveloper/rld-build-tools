@@ -68,7 +68,7 @@ public final class FullThreadDump {
      * @throws IOException if connection to the JMX server fails
      */
     public FullThreadDump(String hostname, int port) throws IOException {
-        LOG.info("Connecting to {}:{}", hostname, port);
+        LOG.info("Connecting to {}:{}", hostname.replaceAll("[\r\n]", ""), port);
 
         // Create an RMI connector client and connect it to
         // the RMI connector server
@@ -160,7 +160,7 @@ public final class FullThreadDump {
         FullThreadDump ftd = new FullThreadDump(hostname, port);
         List<String> threadInfo = ftd.dump();
         for (String threadInfoLine : threadInfo) {
-            LOG.info(threadInfoLine);
+            LOG.info(threadInfoLine.replaceAll("[\r\n]", ""));
         }
     }
 

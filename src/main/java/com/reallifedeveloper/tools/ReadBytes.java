@@ -10,11 +10,14 @@ import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Utility class to read a file and display the content as bytes.
  *
  * @author RealLifeDeveloper
  */
+@SuppressFBWarnings(value = "URLCONNECTION_SSRF_FD", justification = "Use at your own risk")
 public final class ReadBytes {
 
     private static final int BLOCK_SIZE = 16;
@@ -65,6 +68,7 @@ public final class ReadBytes {
         }
     }
 
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "The string is being sanitized replacing line break with space")
     private static void logBytes(byte[] data, int n) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < n; i++) {

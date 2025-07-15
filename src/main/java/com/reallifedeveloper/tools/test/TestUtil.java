@@ -16,6 +16,8 @@ import java.util.Scanner;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Miscellaneous utility methods that are useful when testing.
  *
@@ -46,6 +48,7 @@ public final class TestUtil {
      *
      * @throws IOException if an I/O error occurs when trying to open a socket
      */
+    @SuppressFBWarnings(value = "UNENCRYPTED_SERVER_SOCKET", justification = "Server socket only created temporarily to find free port")
     public static int findFreePort() throws IOException {
         try (ServerSocket server = new ServerSocket(0)) {
             return server.getLocalPort();
@@ -103,6 +106,7 @@ public final class TestUtil {
      *
      * @throws IOException if writing to the file failed
      */
+    @SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "Use at your own risk")
     public static void writeToFile(String s, String filename, Charset charset) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(filename), charset)) {
             writer.write(s);
