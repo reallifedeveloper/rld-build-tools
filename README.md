@@ -9,6 +9,8 @@ You are free to use this code in your own projects as you see fit, see the [lice
 If you encounter any problems or have any suggestions for improvements, please use the Github issue tracking system:
 https://github.com/reallifedeveloper/rld-build-tools/issues
 
+If you would like to contribute to this project, please take a look [here](CONTRIBUTING.md).
+
 The code is available on Maven Central, so you can use it directly in a Maven project:
 ```
 <dependency>
