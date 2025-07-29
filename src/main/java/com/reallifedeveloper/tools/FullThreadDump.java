@@ -119,6 +119,7 @@ public final class FullThreadDump {
      *
      * @throws IOException
      */
+    @SuppressWarnings("BanJNDI")
     private void connect(JMXServiceURL url) throws IOException {
         Map<String, Object> env = new HashMap<>();
         // String[] credentials = { "controlRole", "control" };

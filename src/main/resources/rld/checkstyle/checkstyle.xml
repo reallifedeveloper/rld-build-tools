@@ -74,21 +74,28 @@
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
         <!-- ============================================================ -->
 
+        <module name="MissingJavadocPackage" />
+        <module name="MissingJavadocType">
+            <property name="scope" value="package" />
+        </module>
+        <module name="MissingJavadocMethod">
+            <property name="scope" value="package" />
+        </module>
+
         <module name="JavadocType">
             <property name="scope" value="package" />
             <property name="authorFormat" value="\S" />
         </module>
-
         <module name="JavadocMethod">
             <property name="accessModifiers" value="public, protected" />
         </module>
-
         <module name="JavadocVariable">
             <property name="scope" value="protected" />
         </module>
 
         <module name="JavadocStyle">
             <property name="scope" value="package" />
+            <property name="checkEmptyJavadoc" value="true" />
         </module>
 
         <!-- ============================================================ -->
