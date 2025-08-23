@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.reallifedeveloper</groupId>
         <artifactId>rld-parent</artifactId>
-        <version>19</version>
+        <version>20</version>
     </parent>
 
     <artifactId>rld-build-tools</artifactId>
@@ -16,6 +16,10 @@
 
     <name>RealLifeDeveloper Build Tools</name>
     <description>Tools and configuration for RealLifeDeveloper projects that are only used at build-time, not runtime</description>
+
+    <properties>
+        <jazzer.version>0.25.0</jazzer.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -59,21 +63,6 @@
             <groupId>org.geotools</groupId>
             <artifactId>gt-shapefile</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.checkerframework</groupId>
-            <artifactId>checker-qual</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
 
         <!-- Test dependencies -->
         <dependency>
@@ -110,6 +99,12 @@
             <groupId>com.github.fridujo</groupId>
             <artifactId>rabbitmq-mock</artifactId>
             <version>1.2.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.code-intelligence</groupId>
+            <artifactId>jazzer-junit</artifactId>
+            <version>${jazzer.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
