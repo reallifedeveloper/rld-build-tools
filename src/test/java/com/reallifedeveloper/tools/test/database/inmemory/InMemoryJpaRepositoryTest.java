@@ -24,18 +24,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+@SuppressWarnings({ "unchecked", "NullAway" })
 public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTest {
 
     private final InMemoryJpaRepository<TestEntityWithFieldAnnotations, Integer> repository = new InMemoryJpaRepository<>();
 
     @Override
-    @SuppressWarnings("unchecked")
     protected InMemoryJpaRepository<TestEntityWithFieldAnnotations, Integer> repository() {
         return repository;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     protected TestEntityWithFieldAnnotations createTestEntity(Integer id, String name) {
         return new TestEntityWithFieldAnnotations(id, name);
     }
@@ -258,7 +257,8 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
      * A JPA entity that uses property access, i.e., puts JPA annotations on get methods.
      */
     @Entity
-    private static class TestEntityWithMethodAnnotations {
+    @SuppressWarnings("UnusedMethod")
+    public static class TestEntityWithMethodAnnotations {
 
         private Long id;
         private String name;
@@ -269,7 +269,7 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
         }
 
         @Id
-        public Long getId() {
+        Long getId() {
             return id;
         }
 
@@ -278,11 +278,11 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
         }
 
         @Column
-        public String getName() {
+        String getName() {
             return name;
         }
 
-        public void setName(String name) {
+        void setName(String name) {
             this.name = name;
         }
     }
@@ -293,16 +293,17 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
      * @param <ID> the type of the primary key
      */
     @MappedSuperclass
+    @SuppressWarnings("UnusedMethod")
     private abstract static class AbstractEntityWithFieldAnnotations<ID> {
 
         @Id
         private final ID id;
 
-        protected AbstractEntityWithFieldAnnotations(ID id) {
+        AbstractEntityWithFieldAnnotations(ID id) {
             this.id = id;
         }
 
-        public ID getId() {
+        ID getId() {
             return id;
         }
     }
@@ -311,6 +312,7 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
      * A JPA entity that inherits from {@link AbstractEntityWithFieldAnnotations} and uses field access.
      */
     @Entity
+    @SuppressWarnings("UnusedMethod")
     private static class ConcreteEntityWithFieldAnnotations extends AbstractEntityWithFieldAnnotations<Integer> {
 
         @Column
@@ -333,16 +335,17 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
      * @param <ID> the type of the primary key
      */
     @MappedSuperclass
+    @SuppressWarnings("UnusedMethod")
     private abstract static class AbstractEntityWithMethodAnnotations<ID> {
 
         private final ID id;
 
-        protected AbstractEntityWithMethodAnnotations(ID id) {
+        AbstractEntityWithMethodAnnotations(ID id) {
             this.id = id;
         }
 
         @Id
-        protected ID getId() {
+        ID getId() {
             return id;
         }
     }
@@ -351,6 +354,7 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
      * A JPA entity that inherits from {@link AbstractEntityWithMethodAnnotations} and uses property access.
      */
     @Entity
+    @SuppressWarnings("UnusedMethod")
     private static class ConcreteEntityWithMethodAnnotations extends AbstractEntityWithMethodAnnotations<Integer> {
 
         private final String name;
@@ -361,7 +365,7 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
         }
 
         @Column
-        public String getName() {
+        String getName() {
             return name;
         }
 
@@ -393,6 +397,7 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
     @Getter
     @EqualsAndHashCode
     @ToString
+    @SuppressWarnings("serial")
     private static class PrimaryKeyClass implements Serializable, Comparable<PrimaryKeyClass> {
         private Integer id1;
         private Integer id2;

@@ -61,6 +61,7 @@ public class DbUnitTestEntity {
         this.testEntities = new ArrayList<>(testEntities);
     }
 
+    @SuppressWarnings("NullAway")
     DbUnitTestEntity() {
     }
 

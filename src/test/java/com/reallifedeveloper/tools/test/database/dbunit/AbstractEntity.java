@@ -1,5 +1,7 @@
 package com.reallifedeveloper.tools.test.database.dbunit;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -10,17 +12,17 @@ public abstract class AbstractEntity<ID> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private final ID id;
+    private final @Nullable ID id;
 
     protected AbstractEntity() {
         this(null);
     }
 
-    protected AbstractEntity(ID id) {
+    protected AbstractEntity(@Nullable ID id) {
         this.id = id;
     }
 
-    public ID id() {
+    public @Nullable ID id() {
         return id;
     }
 }

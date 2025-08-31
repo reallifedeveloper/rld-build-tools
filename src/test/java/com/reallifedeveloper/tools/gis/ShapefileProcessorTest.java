@@ -49,12 +49,14 @@ public class ShapefileProcessorTest {
     }
 
     @Test
+    @SuppressWarnings("NullAway")
     public void processShapefileNullUrl() throws Exception {
         Exception e = assertThrows(IllegalArgumentException.class, () -> shapefileProcessor.processShapefile(null));
         assertEquals("shapefileUrl must not be null", e.getMessage());
     }
 
     @Test
+    @SuppressWarnings("NullAway")
     public void constructorNullFeatureProcessor() {
         Exception e = assertThrows(IllegalArgumentException.class, () -> new ShapefileProcessor(null));
         assertEquals("featureProcessor must not be null", e.getMessage());

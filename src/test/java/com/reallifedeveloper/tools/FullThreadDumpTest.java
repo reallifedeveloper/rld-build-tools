@@ -120,14 +120,15 @@ public class FullThreadDumpTest {
     }
 
     @Test
+    @SuppressWarnings("NullAway")
     public void mainNoArguments() throws Exception {
         assertThrows(IllegalArgumentException.class, () -> FullThreadDump.main((String[]) null));
     }
 
     private static class Deadlock {
         private static final Logger LOG = LoggerFactory.getLogger(Deadlock.class);
-        private String s1 = "foo";
-        private String s2 = "bar";
+        private final String s1 = "foo";
+        private final String s2 = "bar";
         private int i;
 
         private Thread t1 = new Thread("Thread 1") {

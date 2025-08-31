@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.NullHandling;
 import org.springframework.data.domain.Sort.Order;
@@ -71,7 +72,7 @@ public final class SortUtil {
         }
 
         @SuppressWarnings("unchecked")
-        private int nullSafeCompare(T fieldValue1, T fieldValue2) {
+        private int nullSafeCompare(@Nullable T fieldValue1, @Nullable T fieldValue2) {
             if (fieldValue1 == null) {
                 if (fieldValue2 == null) {
                     return 0;

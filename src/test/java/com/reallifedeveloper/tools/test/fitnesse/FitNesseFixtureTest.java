@@ -72,11 +72,13 @@ public class FitNesseFixtureTest extends BaseFitNesseFixture {
     }
 
     @Test
+    @SuppressWarnings("NullAway")
     public void testToStringNull() {
         assertEquals(null, toString(null), "Wrong result from toString: ");
     }
 
     @Test
+    @SuppressWarnings("NullAway")
     public void baseFitnNesseFixtureWithNullSpringConfigResourceName() {
         Exception e = assertThrows(IllegalArgumentException.class, () -> new BaseFitNesseFixture((String) null));
         assertEquals("springConfigurationResourceName must not be null", e.getMessage());

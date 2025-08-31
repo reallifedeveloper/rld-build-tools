@@ -41,6 +41,7 @@ public class MoveMessagesTest {
     }
 
     @Test
+    @SuppressWarnings("NullAway")
     public void constructorWithNullConnectionFacctoryThrowsException() {
         Exception e = assertThrows(IllegalArgumentException.class, () -> new MoveMessages(null));
         assertEquals("connectionFactory must not be null", e.getMessage());

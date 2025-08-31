@@ -2,6 +2,7 @@ package com.reallifedeveloper.tools.test.database.dbunit;
 
 import java.io.StringWriter;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
@@ -64,7 +65,7 @@ public class DbUnitDtdGenerator {
      * Factory method to create a new {@code DbUnitDtdGenerator} instance using an application context constructed from a Spring
      * configuration class, i.e., a class annotated with {@code org.springframework.context.annotation.Configuration}.
      *
-     * @param configClass the {@code &#064;Configuration} class
+     * @param configClass the {@code @Configuration} class
      *
      * @return the new {@code DbUnitDtdGenerator} instance
      */
@@ -108,8 +109,8 @@ public class DbUnitDtdGenerator {
      */
     public String generateDtd() throws SQLException, DatabaseUnitException {
         IDatabaseConnection connection = new DatabaseConnection(getDataSource().getConnection());
-        if (getDataTypeFactory() != null) {
-            connection.getConfig().setProperty(DatabaseConfig.PROPERTY_DATATYPE_FACTORY, getDataTypeFactory());
+        if (getDataTypeFactory().isPresent()) {
+            connection.getConfig().setProperty(DatabaseConfig.PROPERTY_DATATYPE_FACTORY, getDataTypeFactory().get());
         }
         IDataSet dataSet = connection.createDataSet();
         StringWriter stringWriter = new StringWriter();
@@ -123,13 +124,13 @@ public class DbUnitDtdGenerator {
         return applicationContext.getBean(DataSource.class);
     }
 
-    private IDataTypeFactory getDataTypeFactory() {
+    private Optional<IDataTypeFactory> getDataTypeFactory() {
         IDataTypeFactory dataTypeFactory = null;
         try {
             dataTypeFactory = applicationContext.getBean(IDataTypeFactory.class);
         } catch (NoSuchBeanDefinitionException e) {
             LOG.warn(e.getMessage());
         }
-        return dataTypeFactory;
+        return Optional.ofNullable(dataTypeFactory);
     }
 }

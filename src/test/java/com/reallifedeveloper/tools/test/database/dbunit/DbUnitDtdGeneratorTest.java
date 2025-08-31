@@ -105,6 +105,7 @@ public class DbUnitDtdGeneratorTest {
     }
 
     @Test
+    @SuppressWarnings("NullAway")
     public void mainIncorrectArgument() throws Exception {
         Exception e = assertThrows(BeanDefinitionStoreException.class, () -> DbUnitDtdGenerator.main("foo"));
         assertEquals(FileNotFoundException.class, e.getCause().getClass(), "Wrong root cause: ");

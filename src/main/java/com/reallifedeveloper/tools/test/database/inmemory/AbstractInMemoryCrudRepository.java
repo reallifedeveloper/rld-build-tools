@@ -284,11 +284,18 @@ public abstract class AbstractInMemoryCrudRepository<T, ID extends Comparable<ID
     // Helper methods
     //
 
-    private ID maximumPrimaryKey() {
+    /**
+     * Gives the value of the largest primary key in an entity currently in the repository.
+     * <p>
+     * This method returns {@code null} if there are no entities in the repository. Since the save methods guarantee that
+     *
+     * @return the largest primary key in the repository, or {@code null} if the repository is empty
+     */
+    private @Nullable ID maximumPrimaryKey() {
         ID max = null;
         for (T entity : findAll()) {
             ID id = getId(entity);
-            if (max == null || id.compareTo(max) > 0) {
+            if (max == null || (id != null && id.compareTo(max) > 0)) {
                 max = id;
             }
         }
@@ -306,7 +313,7 @@ public abstract class AbstractInMemoryCrudRepository<T, ID extends Comparable<ID
     protected @Nullable ID getId(T entity) {
         ID id = null;
         try {
-            if (getIdClass(entity).isPresent()) {
+            if (getCompositeIdClass(entity).isPresent()) {
                 // TODO: Handle IdClass with method annotations
                 List<Field> idFields = getIdFields(entity);
                 id = createIdClassInstance(entity, idFields);
@@ -329,17 +336,25 @@ public abstract class AbstractInMemoryCrudRepository<T, ID extends Comparable<ID
      * @param entity the entity for which to set the ID
      * @param id     the new ID value
      */
-    protected void setId(T entity, ID id) {
+    protected void setId(T entity, @Nullable ID id) {
         try {
-            if (getIdClass(entity).isPresent()) {
+            if (getCompositeIdClass(entity).isPresent()) {
                 // TODO: Handle IdClass with method annotations
                 List<Field> idFields = getIdFields(entity);
-                setIdFieldsFromIdClassInstance(entity, idFields, id);
+                if (id == null) {
+                    for (Field idField : idFields) {
+                        idField.set(entity, null);
+                    }
+                } else {
+                    setIdFieldsFromIdClassInstance(entity, idFields, id);
+                }
             } else if (getIdField(entity).isPresent()) {
                 getIdField(entity).get().set(entity, id);
             } else if (getIdMethod(entity).isPresent()) {
-                Method setMethod = getSetMethod(entity, id);
-                setMethod.invoke(entity, id);
+                @SuppressWarnings("unchecked")
+                Class<ID> idClass = (Class<ID>) getIdMethod(entity).get().getReturnType();
+                Method setIdMethod = getSetMethod(entity, idClass);
+                setIdMethod.invoke(entity, id);
             }
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new IllegalStateException(e);
@@ -398,17 +413,18 @@ public abstract class AbstractInMemoryCrudRepository<T, ID extends Comparable<ID
         return idMethods;
     }
 
-    private Method getSetMethod(T entity, ID id) throws NoSuchMethodException {
+    private Method getSetMethod(T entity, Class<ID> idClass) throws NoSuchMethodException {
         Method getMethod = getIdMethod(entity)
                 .orElseThrow(() -> new NoSuchMethodException("Get method for ID not found: entity=" + entity));
         String setMethodName = getMethod.getName().replaceFirst("^get", "set");
-        Method setMethod = entity.getClass().getMethod(setMethodName, id.getClass());
+        Method setMethod = entity.getClass().getMethod(setMethodName, idClass);
         setMethod.setAccessible(true);
         return setMethod;
     }
 
     private @Nullable ID createIdClassInstance(T entity, List<Field> idFields) throws ReflectiveOperationException {
-        Class<ID> idClass = getIdClass(entity).orElseThrow(() -> new IllegalStateException("ID class not found: entity=" + entity));
+        Class<ID> idClass = getCompositeIdClass(entity)
+                .orElseThrow(() -> new IllegalStateException("Composibte ID class not found: entity=" + entity));
         Constructor<ID> constructor = idClass.getDeclaredConstructor();
         constructor.setAccessible(true);
         ID id = constructor.newInstance();
@@ -454,7 +470,7 @@ public abstract class AbstractInMemoryCrudRepository<T, ID extends Comparable<ID
      *
      * @return the ID class representing the composite primary key of {@code entity}, or an empty optional if there is no such class
      */
-    protected abstract Optional<Class<ID>> getIdClass(Object entity);
+    protected abstract Optional<Class<ID>> getCompositeIdClass(Object entity);
 
     @Override
     public String toString() {
@@ -544,7 +560,8 @@ public abstract class AbstractInMemoryCrudRepository<T, ID extends Comparable<ID
      *      Explanation of finalizer attack</a>
      */
     @Override
-    @SuppressWarnings({ "checkstyle:NoFinalizer", "PMD.EmptyFinalizer", "PMD.EmptyMethodInAbstractClassShouldBeAbstract" })
+    @SuppressWarnings({ "deprecation", "removal", "Finalize", "checkstyle:NoFinalizer", "PMD.EmptyFinalizer",
+            "PMD.EmptyMethodInAbstractClassShouldBeAbstract" })
     protected final void finalize() throws Throwable {
         // Do nothing
     }

@@ -49,8 +49,7 @@ public class ShapefileDrawingPanelTest {
         public void processFeature(Feature feature) {
             SimpleFeature simpleFeature = (SimpleFeature) feature;
             for (Object attribute : simpleFeature.getAttributes()) {
-                if (attribute instanceof Geometry) {
-                    Geometry geometry = (Geometry) attribute;
+                if (attribute instanceof Geometry geometry) {
                     geometryDrawingPanel.addGeometry(geometry);
                 }
             }

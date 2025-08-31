@@ -145,13 +145,13 @@ public final class TestUtil {
      *
      * @param obj       the object in which to inject the value
      * @param fieldName the name of the field
-     * @param value     the value to inject
+     * @param value     the value to inject, may be {@code null}
      *
      * @throws IllegalArgumentException if {@code obj} or {@code fieldName} is {@code null}
      * @throws IllegalStateException    if reflecction failure
      */
     @SuppressWarnings("PMD.AvoidAccessibilityAlteration")
-    public static void injectField(Object obj, String fieldName, Object value) {
+    public static void injectField(Object obj, String fieldName, @Nullable Object value) {
         try {
             Field field = getField(obj, fieldName);
             field.setAccessible(true);

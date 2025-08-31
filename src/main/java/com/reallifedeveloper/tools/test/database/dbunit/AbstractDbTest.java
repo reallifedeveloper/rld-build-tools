@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import javax.sql.DataSource;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.dbunit.dataset.DataSetException;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.datatype.IDataTypeFactory;
@@ -63,8 +64,8 @@ public abstract class AbstractDbTest {
      */
     public static final DatabaseOperation DEFAULT_TEARDOWN_OPERATION = DatabaseOperation.NONE;
 
-    private String schemaName;
-    private String dataSetDtdResourceName;
+    private Optional<String> schemaName;
+    private Optional<String> dataSetDtdResourceName;
     private String[] dataSetResourceNames;
 
     private DbTestHelper dbTestHelper;
@@ -86,12 +87,12 @@ public abstract class AbstractDbTest {
      * @param dataSetDtdResourceName name of the classpath resource containing the DTD for the XML, or {@code null} to not validate
      * @param dataSetResourceNames   names of classpath resources containing DBUnit XML
      */
-    protected AbstractDbTest(String schemaName, String dataSetDtdResourceName, String... dataSetResourceNames) {
+    protected AbstractDbTest(String schemaName, @Nullable String dataSetDtdResourceName, String... dataSetResourceNames) {
         if (dataSetResourceNames == null) {
             throw new IllegalArgumentException("dataSetResourceName must not be null");
         }
-        this.schemaName = schemaName;
-        this.dataSetDtdResourceName = dataSetDtdResourceName;
+        this.schemaName = Optional.ofNullable(schemaName);
+        this.dataSetDtdResourceName = Optional.ofNullable(dataSetDtdResourceName);
         this.dataSetResourceNames = dataSetResourceNames.clone();
     }
 
@@ -127,7 +128,7 @@ public abstract class AbstractDbTest {
      *
      * @return the database schema name
      */
-    protected String getSchemaName() {
+    protected Optional<String> getSchemaName() {
         return schemaName;
     }
 
@@ -136,7 +137,7 @@ public abstract class AbstractDbTest {
      *
      * @return the name of the DTD resource
      */
-    protected String getDataSetDtdResourceName() {
+    protected Optional<String> getDataSetDtdResourceName() {
         return dataSetDtdResourceName;
     }
 
@@ -161,7 +162,8 @@ public abstract class AbstractDbTest {
      * @throws IOException      if reading a resource failed
      */
     protected IDataSet getDataSet() throws DataSetException, IOException {
-        return DbTestHelper.readDataSetFromClasspath(getDataSetDtdResourceName(), getDataSetResourceNames());
+        String dtdResourceName = getDataSetDtdResourceName().orElse(null);
+        return DbTestHelper.readDataSetFromClasspath(dtdResourceName, getDataSetResourceNames());
     }
 
     /**
@@ -212,10 +214,11 @@ public abstract class AbstractDbTest {
      * Make finalize method final to avoid "Finalizer attacks" and corresponding SpotBugs warning (CT_CONSTRUCTOR_THROW).
      *
      * @see <a href="https://wiki.sei.cmu.edu/confluence/display/java/OBJ11-J.+Be+wary+of+letting+constructors+throw+exceptions">
-     * Explanation of finalizer attack</a>
+     *      Explanation of finalizer attack</a>
      */
     @Override
-    @SuppressWarnings({ "checkstyle:NoFinalizer", "PMD.EmptyFinalizer", "PMD.EmptyMethodInAbstractClassShouldBeAbstract" })
+    @SuppressWarnings({ "deprecation", "removal", "Finalize", "checkstyle:NoFinalizer", "PMD.EmptyFinalizer",
+            "PMD.EmptyMethodInAbstractClassShouldBeAbstract" })
     protected final void finalize() throws Throwable {
         // Do nothing
     }

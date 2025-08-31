@@ -1,5 +1,7 @@
 package com.reallifedeveloper.tools.test.database.inmemory;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 /**
  * A generator of primary keys of a certain type.
  *
@@ -17,6 +19,6 @@ public interface PrimaryKeyGenerator<ID> {
      *
      * @return the next primary key
      */
-    ID nextPrimaryKey(ID previousMax);
+    ID nextPrimaryKey(@Nullable ID previousMax);
 
 }

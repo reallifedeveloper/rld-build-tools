@@ -32,6 +32,7 @@ public class Shape2Sql {
      */
     public static final String CHARACTER_ENCODING = "UTF-8";
 
+    @SuppressWarnings("InlineFormatString")
     private static final String SQL_TEMPLATE = "INSERT INTO bar (name, url, geometry) "
             + "VALUES ('%s', '%s', geometry::STGeomFromText('%s', %d));";
 

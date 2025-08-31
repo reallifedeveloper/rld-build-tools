@@ -24,7 +24,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -188,6 +187,11 @@ public final class DbUnitFlatXmlReader {
                 rhsPrimaryKey = attribute.getNodeValue();
             }
         }
+        if (lhsPrimaryKey == null || rhsPrimaryKey == null) {
+            throw new IllegalStateException(
+                    "Failed to find join table: missing attribute in DBUnit XML file: '" + joinColumn.name() + "' or '"
+                            + inverseJoinColumn.name() + "'");
+        }
         Object lhs = findEntity(lhsPrimaryKey, joinTableField.getDeclaringClass());
         Object rhs = findEntity(rhsPrimaryKey, targetType);
         try {
@@ -242,7 +246,7 @@ public final class DbUnitFlatXmlReader {
         return constructor.newInstance();
     }
 
-    private <T, ID> void setField(T entity, String fieldName, @Nullable String attributeValue, Class<ID> primaryKeyType)
+    private <T, ID> void setField(T entity, String fieldName, String attributeValue, Class<ID> primaryKeyType)
             throws ReflectiveOperationException {
         Field field = getField(entity, fieldName);
         field.setAccessible(true);

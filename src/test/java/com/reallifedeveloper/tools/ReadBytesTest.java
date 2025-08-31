@@ -46,6 +46,7 @@ public class ReadBytesTest {
     }
 
     @Test
+    @SuppressWarnings("NullAway")
     public void logBytesFromNullUrl() throws Exception {
         assertThrows(IllegalArgumentException.class, () -> ReadBytes.logBytesFromUrl(null));
     }

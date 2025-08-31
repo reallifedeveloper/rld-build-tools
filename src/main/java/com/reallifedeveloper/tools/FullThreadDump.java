@@ -27,7 +27,6 @@ import java.lang.management.LockInfo;
 import java.lang.management.MonitorInfo;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -73,15 +72,8 @@ public final class FullThreadDump {
         // Create an RMI connector client and connect it to
         // the RMI connector server
         String urlPath = "/jndi/rmi://" + hostname + ":" + port + "/jmxrmi";
-        try {
-            JMXServiceURL url = new JMXServiceURL("rmi", "", 0, urlPath);
-            connect(url);
-        } catch (MalformedURLException cause) {
-            // Should never happen
-            InternalError ie = new InternalError(cause.getMessage());
-            ie.initCause(cause);
-            throw ie;
-        }
+        JMXServiceURL url = new JMXServiceURL("rmi", "", 0, urlPath);
+        connect(url);
     }
 
     /**
@@ -116,8 +108,6 @@ public final class FullThreadDump {
 
     /**
      * Connect to a JMX agent of a given URL.
-     *
-     * @throws IOException
      */
     @SuppressWarnings("BanJNDI")
     private void connect(JMXServiceURL url) throws IOException {
@@ -142,7 +132,7 @@ public final class FullThreadDump {
             throw new IllegalArgumentException(usage());
         }
 
-        String[] arg2 = args[0].split(":");
+        String[] arg2 = args[0].split(":", -1); // TODO: Test this
         if (arg2.length != 2) {
             throw new IllegalArgumentException(usage());
         }
@@ -190,7 +180,7 @@ public final class FullThreadDump {
         /**
          * Gives the thread dump information as a list of strings, one line per string.
          */
-        public List<String> threadDump() {
+        List<String> threadDump() {
             if (tmbean.isObjectMonitorUsageSupported() && tmbean.isSynchronizerUsageSupported()) {
                 // Print lock info if both object monitor usage
                 // and synchronizer usage are supported.
@@ -259,7 +249,7 @@ public final class FullThreadDump {
         /**
          * Checks if any threads are deadlocked. If any, save the thread dump information.
          */
-        public boolean findDeadlock() {
+        boolean findDeadlock() {
             long[] tids = tmbean.findDeadlockedThreads();
             if (tids == null) {
                 return false;

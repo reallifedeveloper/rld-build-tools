@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -76,7 +77,7 @@ public class MoveMessagesIT {
         channel.queueBind(QUEUE_DLX, EXCHANGE_DLX, "#");
         // Send test messages to DLQ
         for (int i = 0; i < TEST_MESSAGES.length; i++) {
-            channel.basicPublish(EXCHANGE_DLX, ROUTING_KEYS[i], null, TEST_MESSAGES[i].getBytes());
+            channel.basicPublish(EXCHANGE_DLX, ROUTING_KEYS[i], null, TEST_MESSAGES[i].getBytes(StandardCharsets.UTF_8));
         }
         channel.close();
     }
@@ -91,6 +92,7 @@ public class MoveMessagesIT {
         channel.close();
     }
 
+    @SuppressWarnings("NullAway")
     private static void verifyMessagesAfterMove(Connection connection) throws IOException, TimeoutException {
         verifyMessages(connection, QUEUE1, ROUTING_KEY1, "foo", "baz");
         verifyMessages(connection, QUEUE2, ROUTING_KEY2, "bar");
@@ -111,7 +113,7 @@ public class MoveMessagesIT {
             if (routingKey != null) {
                 assertEquals(routingKey, envelope.getRoutingKey());
             }
-            messagesRead.add(new String(response.getBody()));
+            messagesRead.add(new String(response.getBody(), StandardCharsets.UTF_8));
         }
         assertArrayEquals(messages, messagesRead.toArray());
         channel.close();

@@ -11,6 +11,7 @@ import java.util.List;
 
 import javax.swing.JPanel;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.geotools.geometry.jts.LiteShape;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
@@ -29,12 +30,13 @@ public class GeometryDrawingPanel extends JPanel {
     /**
      * The {@code Geometry} objects to draw.
      */
+    @SuppressWarnings("serial") // Java 21 warns about java.util.List not being serializable
     private final List<Geometry> geometries = new ArrayList<>();
 
     /**
      * A transform that scales the geometries to fit the current panel size, and adds margins.
      */
-    private AffineTransform geomToScreen;
+    private @Nullable AffineTransform geomToScreen;
 
     /**
      * Adds a {@code Geometry} object to be drawn.

@@ -1,7 +1,7 @@
 package com.reallifedeveloper.tools.test.database.dbunit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -18,6 +18,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = DatabaseTestConfiguration.class)
+@SuppressWarnings("NullAway")
 public class DbTestTest extends AbstractDbTest {
 
     @Autowired
@@ -49,8 +50,8 @@ public class DbTestTest extends AbstractDbTest {
     @Test
     public void constructorTwoArgs() {
         DbTest dbTest = new DbTest("foo", "bar");
-        assertEquals("foo", dbTest.getSchemaName(), "Wrong schema name: ");
-        assertNull(dbTest.getDataSetDtdResourceName(), "DTD resource name should be null");
+        assertEquals("foo", dbTest.getSchemaName().get(), "Wrong schema name: ");
+        assertFalse(dbTest.getDataSetDtdResourceName().isPresent(), "DTD resource name should be Optional.empty");
         assertEquals(1, dbTest.getDataSetResourceNames().length, "Wrong number of data set resource names: ");
         assertTrue(dbTest.getDataTypeFactory().isEmpty(), "Data type factory should be empty");
     }

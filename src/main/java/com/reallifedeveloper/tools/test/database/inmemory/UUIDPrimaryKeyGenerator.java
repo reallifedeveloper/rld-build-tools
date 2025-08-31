@@ -2,6 +2,8 @@ package com.reallifedeveloper.tools.test.database.inmemory;
 
 import java.util.UUID;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 /**
  * A primary key generator that generates random UUIDs.
  *
@@ -10,7 +12,7 @@ import java.util.UUID;
 public class UUIDPrimaryKeyGenerator implements PrimaryKeyGenerator<String> {
 
     @Override
-    public String nextPrimaryKey(String previousMax) {
+    public String nextPrimaryKey(@Nullable String previousMax) {
         return UUID.randomUUID().toString();
     }
 

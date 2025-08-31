@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import javax.sql.DataSource;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.dbunit.DataSourceDatabaseTester;
 import org.dbunit.IDatabaseTester;
 import org.dbunit.database.DatabaseConfig;
@@ -37,15 +38,15 @@ public final class DbTestHelper {
      *
      * @param dataSource      the {@code DataSource} to use when inserting test data
      * @param dataSet         the DbUnit test data set to read
-     * @param schemaName      the name of the database schema, or {@code null}
-     * @param dataTypeFactory an {@code IDataTypeFactory}, or {@code null}
+     * @param schemaName      optional name of the database schema
+     * @param dataTypeFactory an optional {@code IDataTypeFactory}
      */
-    public DbTestHelper(DataSource dataSource, IDataSet dataSet, String schemaName, final Optional<IDataTypeFactory> dataTypeFactory) {
+    public DbTestHelper(DataSource dataSource, IDataSet dataSet, Optional<String> schemaName, Optional<IDataTypeFactory> dataTypeFactory) {
         if (dataSource == null || dataSet == null || dataTypeFactory == null) {
             throw new IllegalArgumentException("Arguments must not be null: dataSource=" + dataSource + ", dataSet=" + dataSet
                     + ", schemaName=" + schemaName + ", dataTypeFactory=" + dataTypeFactory);
         }
-        databaseTester = new DataSourceDatabaseTester(dataSource, schemaName) {
+        databaseTester = new DataSourceDatabaseTester(dataSource, schemaName.orElse(null)) {
             // We override this method to configure the dataTypeFactory for the connection, to avoid warnings from DbUnit.
             @Override
             public IDatabaseConnection getConnection() throws Exception {
@@ -74,24 +75,25 @@ public final class DbTestHelper {
      * @throws DataSetException if some resource if malformed
      * @throws IOException      if reading a resource failed
      */
-    public static IDataSet readDataSetFromClasspath(String dataSetDtdResourceName, String... dataSetResourceNames)
+    public static IDataSet readDataSetFromClasspath(@Nullable String dataSetDtdResourceName, String... dataSetResourceNames)
             throws DataSetException, IOException {
         if (dataSetResourceNames == null || dataSetResourceNames.length == 0) {
             throw new IllegalArgumentException("You must provide at least one dataSetResourceName");
         } else {
             FlatXmlDataSetBuilder builder = new FlatXmlDataSetBuilder();
             builder.setColumnSensing(true);
-            addPotentialDtd(builder, dataSetDtdResourceName);
+            addPotentialDtd(builder, Optional.ofNullable(dataSetDtdResourceName));
             List<IDataSet> dataSets = readDataSets(builder, dataSetResourceNames);
             return new CompositeDataSet(dataSets.toArray(new IDataSet[0]));
         }
     }
 
-    private static void addPotentialDtd(FlatXmlDataSetBuilder builder, String dataSetDtdResourceName) throws DataSetException, IOException {
-        if (dataSetDtdResourceName != null) {
-            try (InputStream is = DbTestHelper.class.getResourceAsStream(dataSetDtdResourceName)) {
+    private static void addPotentialDtd(FlatXmlDataSetBuilder builder, Optional<String> dataSetDtdResourceName)
+            throws DataSetException, IOException {
+        if (dataSetDtdResourceName.isPresent()) {
+            try (InputStream is = DbTestHelper.class.getResourceAsStream(dataSetDtdResourceName.get())) {
                 if (is == null) {
-                    throw new IllegalArgumentException("DTD not found on classpath: " + dataSetDtdResourceName);
+                    throw new IllegalArgumentException("DTD not found on classpath: " + dataSetDtdResourceName.get());
                 }
                 builder.setMetaDataSetFromDtd(is);
             }

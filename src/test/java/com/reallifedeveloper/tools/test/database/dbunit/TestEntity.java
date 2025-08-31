@@ -16,6 +16,7 @@ public class TestEntity extends AbstractEntity<Long> {
         this.name = name;
     }
 
+    @SuppressWarnings("NullAway")
     TestEntity() {
     }
 

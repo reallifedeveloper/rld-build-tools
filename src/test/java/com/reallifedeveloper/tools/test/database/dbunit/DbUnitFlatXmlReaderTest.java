@@ -106,9 +106,10 @@ public class DbUnitFlatXmlReaderTest {
 
     @Test
     public void readNonExistingFile() throws Exception {
+        InMemoryJpaRepository<TestEntity, Long> repository = new InMemoryJpaRepository<>();
         DbUnitFlatXmlReader xmlProcessor = new DbUnitFlatXmlReader();
         Exception e = assertThrows(FileNotFoundException.class,
-                () -> xmlProcessor.read("/dbunit/nosuchfile.xml", null, TestEntity.class, Long.class));
+                () -> xmlProcessor.read("/dbunit/nosuchfile.xml", repository, TestEntity.class, Long.class));
         assertEquals("/dbunit/nosuchfile.xml", e.getMessage());
     }
 

@@ -12,6 +12,7 @@ import java.util.Optional;
 
 import javax.sql.DataSource;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.datatype.IDataTypeFactory;
 import org.dbunit.operation.DatabaseOperation;
@@ -49,8 +50,8 @@ public class DbTestHelperTest {
         verifyDataSet(dataSet, dataTypeFactory, 3);
     }
 
-    private void verifyDataSet(IDataSet dataSet, IDataTypeFactory dtf, int expectedNumberOfRows) throws Exception, SQLException {
-        DbTestHelper dbTestHelper = new DbTestHelper(ds, dataSet, null, Optional.ofNullable(dtf));
+    private void verifyDataSet(IDataSet dataSet, @Nullable IDataTypeFactory dtf, int expectedNumberOfRows) throws Exception, SQLException {
+        DbTestHelper dbTestHelper = new DbTestHelper(ds, dataSet, Optional.empty(), Optional.ofNullable(dtf));
         dbTestHelper.setSetUpOperation(DatabaseOperation.CLEAN_INSERT);
         dbTestHelper.setTearDownOperation(DatabaseOperation.DELETE_ALL);
         dbTestHelper.init();
@@ -82,6 +83,7 @@ public class DbTestHelperTest {
     }
 
     @Test
+    @SuppressWarnings("NullAway")
     public void readDataSetFromClasspathNullResourceNames() throws Exception {
         String[] resourceNames = null;
         Exception e = assertThrows(IllegalArgumentException.class,
@@ -99,6 +101,7 @@ public class DbTestHelperTest {
     }
 
     @Test
+    @SuppressWarnings("NullAway")
     public void constructorNullDataSource() throws Exception {
         IDataSet dataSet = DbTestHelper.readDataSetFromClasspath("/dbunit/rld-build-tools.dtd", "/dbunit/testentity.xml");
         Exception e = assertThrows(IllegalArgumentException.class,
@@ -107,6 +110,7 @@ public class DbTestHelperTest {
     }
 
     @Test
+    @SuppressWarnings("NullAway")
     public void constructorNullDataSet() throws Exception {
         Exception e = assertThrows(IllegalArgumentException.class, () -> new DbTestHelper(ds, null, null, Optional.of(dataTypeFactory)));
         assertTrue(e.getMessage().contains("Arguments must not be null: dataSource=" + ds + ", dataSet=null"));

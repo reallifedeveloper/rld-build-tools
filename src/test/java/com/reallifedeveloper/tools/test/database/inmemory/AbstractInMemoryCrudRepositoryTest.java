@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Example;
@@ -18,11 +19,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+@SuppressWarnings("NullAway")
 public abstract class AbstractInMemoryCrudRepositoryTest {
 
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     protected abstract <T extends AbstractInMemoryCrudRepository<TestEntity, Integer>> T repository();
 
-    protected abstract <T extends TestEntity> T createTestEntity(Integer id, String name);
+    @SuppressWarnings("TypeParameterUnusedInFormals")
+    protected abstract <T extends TestEntity> T createTestEntity(@Nullable Integer id, String name);
 
     @Test
     public void findByField() {
