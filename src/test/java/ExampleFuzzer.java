@@ -2,6 +2,7 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
+@SuppressWarnings("DefaultPackage")
 public class ExampleFuzzer {
     private static final int STRING_MAX_LENGTH = 100;
 
