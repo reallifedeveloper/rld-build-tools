@@ -11,6 +11,8 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Scanner;
 
@@ -95,6 +97,15 @@ public final class TestUtil {
         } catch (ParseException e) {
             throw new IllegalArgumentException("Unparseable date/time: " + dateTime, e);
         }
+    }
+
+    /**
+     * Gives the current date and time in the UTC time zone.
+     *
+     * @return the current UTC date and time
+     */
+    public static ZonedDateTime utcNow() {
+        return ZonedDateTime.now(ZoneOffset.UTC);
     }
 
     /**

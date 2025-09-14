@@ -76,7 +76,7 @@ public abstract class AbstractDbTest {
      * @param schemaName          name of the database schema, or {@code null}
      * @param dataSetResourceName name of the classpath resource that contains DBUnit XML
      */
-    protected AbstractDbTest(String schemaName, String dataSetResourceName) {
+    protected AbstractDbTest(@Nullable String schemaName, String dataSetResourceName) {
         this(schemaName, null, dataSetResourceName);
     }
 
@@ -87,7 +87,7 @@ public abstract class AbstractDbTest {
      * @param dataSetDtdResourceName name of the classpath resource containing the DTD for the XML, or {@code null} to not validate
      * @param dataSetResourceNames   names of classpath resources containing DBUnit XML
      */
-    protected AbstractDbTest(String schemaName, @Nullable String dataSetDtdResourceName, String... dataSetResourceNames) {
+    protected AbstractDbTest(@Nullable String schemaName, @Nullable String dataSetDtdResourceName, String... dataSetResourceNames) {
         if (dataSetResourceNames == null) {
             throw new IllegalArgumentException("dataSetResourceName must not be null");
         }

@@ -15,6 +15,8 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -87,6 +89,15 @@ public class TestUtilTest {
         assertEquals(hour, calendar.get(Calendar.HOUR_OF_DAY), "Wrong hour: ");
         assertEquals(minute, calendar.get(Calendar.MINUTE), "Wrong minute: ");
         assertEquals(second, calendar.get(Calendar.SECOND), "Wrong second: ");
+    }
+
+    @Test
+    public void utcNowShouldReturnCurrentDateAndTimeInUtc() {
+        ZonedDateTime now = TestUtil.utcNow();
+        assertEquals(ZoneOffset.UTC, now.getOffset());
+        long expectedSeconds = ZonedDateTime.now(ZoneOffset.UTC).toInstant().toEpochMilli() / 1000;
+        long actualSeconds = now.toInstant().toEpochMilli() / 1000;
+        assertEquals(expectedSeconds, actualSeconds);
     }
 
     @Test
