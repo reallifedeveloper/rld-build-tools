@@ -29,3 +29,13 @@ To create a Maven site with documentation, including Javadoc, in `target/site/in
     mvn -P coverage clean integration-test site
 
 For more information, see <https://reallifedeveloper.com/>.
+
+[![CI](https://github.com/reallifedeveloper/rld-build-tools/actions/workflows/main.yaml/badge.svg)](https://github.com/reallifedeveloper/rld-build-tools/actions/workflows/main.yaml)
+[![CD](https://github.com/reallifedeveloper/rld-build-tools/actions/workflows/release.yaml/badge.svg)](https://github.com/reallifedeveloper/rld-build-tools/actions/workflows/release.yaml)
+
+![Maven Central Version](https://img.shields.io/maven-central/v/com.reallifedeveloper/rld-build-tools)
+[![License](https://img.shields.io/:license-mit-blue.svg)](https://badges.mit-license.org)
+
+
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/reallifedeveloper/rld-build-tools/badge)](https://scorecard.dev/viewer/?uri=github.com/reallifedeveloper/rld-build-tools)
+[![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/10898/badge)](https://bestpractices.coreinfrastructure.org/projects/10898)
