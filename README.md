@@ -28,7 +28,7 @@ To create a Maven site with documentation, including Javadoc, in `target/site/in
 
     mvn -P coverage clean integration-test site
 
-For more information, see <https://reallifedeveloper.com/>.
+For more information, see <https://reallifedeveloper.com/maven-site/rld-build-tools>.
 
 [![CI](https://github.com/reallifedeveloper/rld-build-tools/actions/workflows/main.yaml/badge.svg)](https://github.com/reallifedeveloper/rld-build-tools/actions/workflows/main.yaml)
 [![CD](https://github.com/reallifedeveloper/rld-build-tools/actions/workflows/release.yaml/badge.svg)](https://github.com/reallifedeveloper/rld-build-tools/actions/workflows/release.yaml)
