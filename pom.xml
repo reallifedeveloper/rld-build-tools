@@ -12,7 +12,7 @@
     </parent>
 
     <artifactId>rld-build-tools</artifactId>
-    <version>2.1.12-SNAPSHOT</version>
+    <version>2.1.13-SNAPSHOT</version>
 
     <name>RealLifeDeveloper Build Tools</name>
     <description>Tools and configuration for RealLifeDeveloper projects that are only used at build-time, not runtime</description>
