@@ -27,6 +27,12 @@
             <property name="regex" value="\/\*\s*package-private\s*\*\/" />
         </properties>
     </rule>
+    <rule ref="category/java/codestyle.xml/TypeParameterNamingConventions">
+        <properties>
+            <!-- Allow type parameter with names such as "ID" -->
+            <property name="typeParameterNamePattern" value="[A-Z][A-Z]?" />
+        </properties>
+    </rule>
 
     <rule ref="category/java/design.xml">
         <exclude name="DataClass" />

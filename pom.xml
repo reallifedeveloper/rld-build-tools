@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.reallifedeveloper</groupId>
         <artifactId>rld-parent</artifactId>
-        <version>22</version>
+        <version>23</version>
     </parent>
 
     <artifactId>rld-build-tools</artifactId>
@@ -18,7 +18,7 @@
     <description>Tools and configuration for RealLifeDeveloper projects that are only used at build-time, not runtime</description>
 
     <properties>
-        <rld-bom.version>20250920.1</rld-bom.version>
+        <rld-build-tools.version>${project.version}</rld-build-tools.version>
     </properties>
 
     <dependencies>
@@ -119,45 +119,6 @@
                         -Dcom.sun.management.jmxremote.ssl=false
                     </argLine>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.reallifedeveloper</groupId>
-                        <artifactId>rld-build-tools</artifactId>
-                        <version>${project.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-pmd-plugin</artifactId>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.reallifedeveloper</groupId>
-                        <artifactId>rld-build-tools</artifactId>
-                        <version>${project.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-            <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.reallifedeveloper</groupId>
-                        <artifactId>rld-build-tools</artifactId>
-                        <version>${project.version}</version>
-                        <exclusions>
-                            <exclusion>
-                                <groupId>org.seleniumhq.selenium</groupId>
-                                <artifactId>selenium-java</artifactId>
-                            </exclusion>
-                        </exclusions>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>
