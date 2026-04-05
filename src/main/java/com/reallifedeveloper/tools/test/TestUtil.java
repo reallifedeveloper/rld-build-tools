@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
@@ -142,7 +143,7 @@ public final class TestUtil {
             if (is == null) {
                 throw new IllegalArgumentException("Resource not found: " + resourceName);
             }
-            try (Scanner s = new Scanner(is, "UTF-8")) {
+            try (Scanner s = new Scanner(is, StandardCharsets.UTF_8)) {
                 while (s.hasNextLine()) {
                     sb.append(s.nextLine()).append(System.lineSeparator());
                 }

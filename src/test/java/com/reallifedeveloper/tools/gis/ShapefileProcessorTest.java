@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,7 +29,7 @@ public class ShapefileProcessorTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Shape2Sql shape2Sql = new Shape2Sql();
         shape2Sql.translate(shapefileUrl, out);
-        List<String> sqlLines = Arrays.asList(out.toString("UTF-8").split("\\n"));
+        List<String> sqlLines = Arrays.asList(out.toString(StandardCharsets.UTF_8).split("\\n"));
         assertEquals(3, sqlLines.size(), "Wrong number of SQL statements: ");
         assertTrue(sqlLines.get(0).contains("Above Eleven"), "Missing content in line 1");
         assertTrue(sqlLines.get(1).contains("Levels Club"), "Missing content in line 2");

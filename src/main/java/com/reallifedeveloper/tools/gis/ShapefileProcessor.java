@@ -3,6 +3,8 @@ package com.reallifedeveloper.tools.gis;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,12 +25,12 @@ import org.geotools.data.simple.SimpleFeatureIterator;
 public final class ShapefileProcessor {
 
     /**
-     * The character encoding that is used by default, {@value #DEFAULT_CHARACTER_ENCODING}.
+     * The character encoding that is used by default, UTF-8.
      */
-    public static final String DEFAULT_CHARACTER_ENCODING = "UTF-8";
+    public static final Charset DEFAULT_CHARACTER_ENCODING = StandardCharsets.UTF_8;
 
     private final FeatureProcessor featureProcessor;
-    private String characterEncoding = DEFAULT_CHARACTER_ENCODING;
+    private Charset characterEncoding = DEFAULT_CHARACTER_ENCODING;
 
     /**
      * Creates a new {@code ShapefileProcessor} that processes features in a shapefile using the given {@link FeatureProcessor}.
@@ -80,7 +82,7 @@ public final class ShapefileProcessor {
      *
      * @param newCharacterEncoding the new character encoding
      */
-    public void setCharacterEncoding(String newCharacterEncoding) {
+    public void setCharacterEncoding(Charset newCharacterEncoding) {
         this.characterEncoding = newCharacterEncoding;
     }
 

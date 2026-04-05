@@ -8,11 +8,11 @@
     <parent>
         <groupId>com.reallifedeveloper</groupId>
         <artifactId>rld-parent</artifactId>
-        <version>24</version>
+        <version>25</version>
     </parent>
 
     <artifactId>rld-build-tools</artifactId>
-    <version>2.1.16-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
 
     <name>RealLifeDeveloper Build Tools</name>
     <description>Tools and configuration for RealLifeDeveloper projects that are only used at build-time, not runtime</description>

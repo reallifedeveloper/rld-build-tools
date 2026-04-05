@@ -5,6 +5,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.geotools.api.feature.Feature;
 import org.geotools.api.feature.Property;
@@ -28,9 +30,9 @@ public class Shape2Sql {
     public static final int SRID = 3857;
 
     /**
-     * The character encoding used, both in the shapefile and in the SQL file being created, {@value #CHARACTER_ENCODING}.
+     * The character encoding used, both in the shapefile and in the SQL file being created, UTF-8}.
      */
-    public static final String CHARACTER_ENCODING = "UTF-8";
+    public static final Charset CHARACTER_ENCODING = StandardCharsets.UTF_8;
 
     @SuppressWarnings("InlineFormatString")
     private static final String SQL_TEMPLATE = "INSERT INTO bar (name, url, geometry) "
