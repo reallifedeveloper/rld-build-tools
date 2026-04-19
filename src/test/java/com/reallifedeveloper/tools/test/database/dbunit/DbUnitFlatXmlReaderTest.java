@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
@@ -11,7 +12,6 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.reallifedeveloper.tools.test.TestUtil;
@@ -91,17 +91,19 @@ public class DbUnitFlatXmlReaderTest {
     public void readFileWithIncorrectAttribute() throws Exception {
         InMemoryJpaRepository<TestEntity, Long> repository = new InMemoryJpaRepository<>();
         DbUnitFlatXmlReader xmlReader = new DbUnitFlatXmlReader();
-        assertThrows(IllegalArgumentException.class,
+        Exception e = assertThrows(IllegalArgumentException.class,
                 () -> xmlReader.read("/dbunit/broken_wrong_attribute.xml", repository, TestEntity.class, Long.class));
+        assertEquals("Cannot find any field matching attribute 'NAMEX' for " + TestEntity.class, e.getMessage());
     }
 
     @Test
-    @Disabled
-    public void readFileWithoutAttributes() throws Exception {
+    public void readFileWithoutIdAttributeAndNoPrimaryKeyGenerator() throws Exception {
         InMemoryJpaRepository<TestEntity, Long> repository = new InMemoryJpaRepository<>();
         DbUnitFlatXmlReader xmlReader = new DbUnitFlatXmlReader();
-        assertThrows(IllegalArgumentException.class,
+        Exception e = assertThrows(IllegalStateException.class,
                 () -> xmlReader.read("/dbunit/broken_no_attributes.xml", repository, TestEntity.class, Long.class));
+        assertTrue(TestUtil.castToNonNull(e.getMessage()).matches(
+                "Primary key is null and no primary key generator available: entity=" + TestEntity.class.getName() + "@[0-9a-f]+"));
     }
 
     @Test
@@ -113,13 +115,13 @@ public class DbUnitFlatXmlReaderTest {
         assertEquals("/dbunit/nosuchfile.xml", e.getMessage());
     }
 
-    private void verifyEntity(TestEntity expected, TestEntity actual) {
+    public static void verifyEntity(TestEntity expected, TestEntity actual) {
         assertNotNull(actual, "Entity should not be null");
         assertEquals(expected.id(), actual.id(), "Wrong id field: ");
         assertEquals(expected.name(), actual.name(), "Wrong name field: ");
     }
 
-    private void verifyEntity(DbUnitTestEntity expected, DbUnitTestEntity actual) {
+    public static void verifyEntity(DbUnitTestEntity expected, DbUnitTestEntity actual) {
         if (expected == null) {
             assertNull("Entity should be null");
         } else {
@@ -147,7 +149,7 @@ public class DbUnitFlatXmlReaderTest {
         }
     }
 
-    private void verifyTestEntity(TestEntity expected, TestEntity actual) {
+    private static void verifyTestEntity(TestEntity expected, TestEntity actual) {
         assertNotNull(actual, "Test entity should not be null");
         assertEquals(expected.id(), actual.id(), "Wrong testEntity.id field: ");
         assertEquals(expected.name(), actual.name(), "Wrong testEntity.name field: ");

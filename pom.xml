@@ -8,11 +8,11 @@
     <parent>
         <groupId>com.reallifedeveloper</groupId>
         <artifactId>rld-parent</artifactId>
-        <version>26</version>
+        <version>27</version>
     </parent>
 
     <artifactId>rld-build-tools</artifactId>
-    <version>3.0.2-SNAPSHOT</version>
+    <version>3.1.0-SNAPSHOT</version>
 
     <name>RealLifeDeveloper Build Tools</name>
     <description>Tools and configuration for RealLifeDeveloper projects that are only used at build-time, not runtime</description>
@@ -33,6 +33,10 @@
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

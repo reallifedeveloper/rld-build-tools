@@ -14,7 +14,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Scanner;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -211,4 +213,40 @@ public final class TestUtil {
         throw new NoSuchFieldException(fieldName);
     }
 
+    /**
+     * Checks that a value that is declared as {@code @Nullable} actually is non-null.
+     *
+     * @param <T> the type of {@code x}
+     *
+     * @param x   the value to check
+     *
+     * @return {@code x} if it is non-null
+     *
+     * @throws IllegalStateException if {@code x} is {@code null}
+     *
+     * @see <a href="https://github.com/uber/NullAway/wiki/Suppressing-Warnings">The NullAway documentation</a>
+     */
+    public static <T> T castToNonNull(@Nullable T x) {
+        if (x == null) {
+            throw new IllegalStateException("Expected value to be non-null");
+        }
+        return x;
+    }
+
+    /**
+     * A null-safe version of {@code java.util.Arrays.asList} that converts an array to a list, or returns null if the array is null.
+     *
+     * @param <T> the type of the array
+     * @param a   the array
+     *
+     * @return the array as a list, or {@code null} if {@code a} is {@code null}
+     */
+    @SuppressWarnings({ "checkstyle:noReturnNull", "PMD.UseVarargs", "PMD.ReturnEmptyCollectionRatherThanNull" })
+    public static <T> @Nullable List<T> asList(@Nullable T[] a) {
+        if (a == null) {
+            return null;
+        } else {
+            return Arrays.asList(a);
+        }
+    }
 }
