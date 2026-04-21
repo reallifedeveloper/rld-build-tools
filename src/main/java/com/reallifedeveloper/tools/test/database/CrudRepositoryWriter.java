@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.data.repository.CrudRepository;
 
@@ -243,6 +244,8 @@ public class CrudRepositoryWriter {
             return new BigDecimal(s);
         } else if (type == BigInteger.class) {
             return new BigInteger(s);
+        } else if (type == UUID.class) {
+            return UUID.fromString(s);
         } else {
             return findEntity(s, type);
         }
