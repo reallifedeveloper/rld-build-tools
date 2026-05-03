@@ -21,7 +21,8 @@ public class DbUnitDtdGeneratorTest {
             <!ELEMENT dataset (
                 DBUNITTESTENTITY*,
                 DBUNITTESTENTITY_TESTENTITY*,
-                TEST_ENTITY*)>
+                TEST_ENTITY*,
+                TEST_ENTITY_WITHOUT_REPOSITORY*)>
 
             <!ELEMENT DBUNITTESTENTITY EMPTY>
             <!ATTLIST DBUNITTESTENTITY
@@ -51,6 +52,13 @@ public class DbUnitDtdGeneratorTest {
             <!ATTLIST TEST_ENTITY
                 ID CDATA #REQUIRED
                 NAME CDATA #IMPLIED
+            >
+
+            <!ELEMENT TEST_ENTITY_WITHOUT_REPOSITORY EMPTY>
+            <!ATTLIST TEST_ENTITY_WITHOUT_REPOSITORY
+                ID CDATA #REQUIRED
+                NAME CDATA #IMPLIED
+                DB_UNIT_TEST_ENTITY_ID CDATA #IMPLIED
             >
 
             """;

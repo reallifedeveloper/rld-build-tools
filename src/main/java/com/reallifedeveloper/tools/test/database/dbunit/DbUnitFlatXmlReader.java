@@ -56,8 +56,10 @@ public final class DbUnitFlatXmlReader {
             dbf.setFeature("http://xml.org/sax/features/validation", false);
             dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
             dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            // Configuration to make the parser safe from XXE attacks while still allowing DTDs.
-            // See https://community.veracode.com/s/article/Java-Remediation-Guidance-for-XXE
+            // Configuration to make the parser safe from XXE attacks while still allowing
+            // DTDs.
+            // See
+            // https://community.veracode.com/s/article/Java-Remediation-Guidance-for-XXE
             dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
             dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             dbf.setXIncludeAware(false);
@@ -72,20 +74,21 @@ public final class DbUnitFlatXmlReader {
     /**
      * Reads a DBUnit flat XML file from the named resource, populating the given repository with entities of the given type.
      *
-     * @param resourceName   the classpath resource containing a DBUnit flat XML document
-     * @param repository     the repository to populate with the entities from the XML document
-     * @param entityType     the entity class to read
-     * @param primaryKeyType the type of primary key the entities use
-     * @param <T>            the type of entity to read
-     * @param <ID>           the type of the primary key of the entities
+     * @param resourceName         the classpath resource containing a DBUnit flat XML document
+     * @param repository           the repository to populate with the entities from the XML document
+     * @param repositoryEntityType the class object representing {@code <T>}, i.e., the class of the entities in the repository
+     * @param entityType           the class object representing {@code <E>}, i.e., the class of the eneity being created
+     *
+     * @param <T>                  the type of entities in the repository
+     * @param <E>                  the type of entity being created
+     * @param <ID>                 the type of the primary key of the entities in the repository
      *
      * @throws IOException  if reading the file failed
      * @throws SAXException if parsing the file failed
      */
 
-    @SuppressFBWarnings(value = "IMPROPER_UNICODE", justification = "equalsIgnoreCase only being used to compare table names")
-    public <T, ID extends Serializable> void read(String resourceName, CrudRepository<T, ID> repository, Class<T> entityType,
-            Class<ID> primaryKeyType) throws IOException, SAXException {
+    public <T, E, ID extends Serializable> void read(String resourceName, CrudRepository<T, ID> repository, Class<T> repositoryEntityType,
+            Class<E> entityType) throws IOException, SAXException {
         try (InputStream in = DbUnitFlatXmlReader.class.getResourceAsStream(resourceName)) {
             if (in == null) {
                 throw new FileNotFoundException(resourceName);
@@ -101,11 +104,10 @@ public final class DbUnitFlatXmlReader {
                     @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
                     DbTableRow tableRow = new NodeTableRow(tableRowNode);
                     String tableName = tableRowNode.getNodeName();
-                    if (tableName.equalsIgnoreCase(CrudRepositoryWriter.getTableName(entityType))) {
-                        crudRepositoryWriter.writeEntity(tableRow, entityType, primaryKeyType, repository);
-                    } else {
-                        crudRepositoryWriter.addEntitiesFromJoinTable(tableRow, tableName);
+                    if (crudRepositoryWriter.writeEntity(tableRow, repositoryEntityType, entityType, repository, tableName)) {
+                        continue;
                     }
+                    crudRepositoryWriter.addEntitiesFromJoinTable(tableRow, tableName);
                 }
             }
         } catch (ReflectiveOperationException | SecurityException e) {

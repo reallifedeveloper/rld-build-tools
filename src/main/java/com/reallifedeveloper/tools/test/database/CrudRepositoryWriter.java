@@ -12,10 +12,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.repository.CrudRepository;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -24,7 +28,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
 
 import com.reallifedeveloper.tools.test.TestUtil;
 
@@ -39,36 +45,55 @@ import com.reallifedeveloper.tools.test.TestUtil;
  *
  * @author RealLifeDeveloper
  */
+@Getter
 @SuppressWarnings("PMD")
 @SuppressFBWarnings(value = "IMPROPER_UNICODE", justification = "equalsIgnoreCase only being used to compare table, column or field names")
 public class CrudRepositoryWriter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CrudRepositoryWriter.class);
 
     private final Set<Class<?>> classes = new HashSet<>();
     private final List<Object> entities = new ArrayList<>();
 
     /**
-     * Creates a new entity based on data from a {@link DbTableRow} and writes it into a repository.
+     * Creates a new entity based on data from a {@link DbTableRow} and writes it into a repository if appropriate.
+     * <p>
+     * This method may create entities that are not directly handled by the repository, in which case they are assumed to be related to some
+     * entity in the repository.
      *
-     * @param <T>            the type of entity
-     * @param <ID>           the type of the primary key of the entity
+     * @param <T>                  the type of entities in the repository
+     * @param <E>                  the type of entity being created
+     * @param <ID>                 the type of the primary key of the entities in the repository
      *
-     * @param tableRow       the {@code TableRow} with the data to insert into the fields of the newly created entity
-     * @param entityType     the class object representing {@code T}
-     * @param primaryKeyType the class object representing {@code ID}
-     * @param repository     the repository in which to insert the newly created entity
+     * @param tableRow             the {@code TableRow} with the data to insert into the fields of the newly created entity
+     * @param repositoryEntityType the class object representing {@code T}, i.e., the type ofrepository entities
+     * @param entityType           the class object representing {@code E}, i.e., the type of entity being created, or {@code null}
+     * @param repository           the repository in which to insert the newly created entity
+     * @param tableName            the name of the database table where the entity should be stored
+     *
+     * @return {@code true} if an entity was created, no matter if it was saved in the repository, {@code false} otherwise
      *
      * @throws ReflectiveOperationException if some reflection operation failed creating the entity or setting is fields
      */
-    public <T, ID extends Serializable> void writeEntity(DbTableRow tableRow, Class<T> entityType, Class<ID> primaryKeyType,
-            CrudRepository<T, ID> repository) throws ReflectiveOperationException {
-        T entity = createEntity(entityType);
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "Logging of entities only")
+    public <T, E, ID extends Serializable> boolean writeEntity(DbTableRow tableRow, Class<T> repositoryEntityType,
+            @Nullable Class<E> entityType, CrudRepository<T, ID> repository, String tableName) throws ReflectiveOperationException {
+        if (entityType == null || entityType.getAnnotation(Entity.class) == null || !getTableName(entityType).equalsIgnoreCase(tableName)) {
+            return false;
+        }
+        E entity = createEntity(entityType);
         for (DbTableField column : tableRow.columns()) {
             String fieldName = getFieldName(column.name(), entityType);
-            setField(entity, fieldName, column.value(), primaryKeyType);
+            setField(entity, fieldName, column.value());
         }
-        entity = repository.save(entity);
+        LOG.debug("Saving entity {}", entity);
         entities.add(entity);
         classes.add(entity.getClass());
+        if (entityType.equals(repositoryEntityType)) {
+            T entity2 = repositoryEntityType.cast(entity);
+            repository.save(entity2);
+        }
+        return true;
     }
 
     /**
@@ -134,17 +159,22 @@ public class CrudRepositoryWriter {
             }
         }
         if (lhsPrimaryKey == null || rhsPrimaryKey == null) {
-            throw new IllegalStateException(
-                    "Failed to find join table: missing attribute in DBUnit XML file: '" + joinColumn.name() + "' or '"
-                            + inverseJoinColumn.name() + "'");
+            throw new IllegalStateException("Failed to find join table: missing attribute in DBUnit XML file: '" + joinColumn.name()
+                    + "' or '" + inverseJoinColumn.name() + "'");
         }
         Object lhs = findEntity(lhsPrimaryKey, joinTableField.getDeclaringClass());
         Object rhs = findEntity(rhsPrimaryKey, targetType);
+        addObjectToCollectionField(joinTableField, lhs, rhs);
+    }
+
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "Only entity values being logged")
+    private void addObjectToCollectionField(Field field, Object lhs, Object rhs) {
         try {
-            Method add = joinTableField.getType().getMethod("add", Object.class);
-            add.invoke(joinTableField.get(lhs), rhs);
+            Method add = field.getType().getMethod("add", Object.class);
+            LOG.debug("Calling add method on field {} of entity {} to add entity {} to collection", field.getName(), lhs, rhs);
+            add.invoke(field.get(lhs), rhs);
         } catch (NoSuchMethodException e) {
-            throw new IllegalStateException("Method 'add' not found -- @JoinTable annotation should be on a Collection", e);
+            throw new IllegalStateException("Method 'add' not found -- field " + field + " should be a Collection", e);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new IllegalStateException("Unexpected problem", e);
         }
@@ -161,8 +191,8 @@ public class CrudRepositoryWriter {
             }
         }
         if (entityType.getSuperclass() == null) {
-            throw new IllegalArgumentException(
-                    "Cannot find any field matching attribute '" + attributeName + "' for " + originalEntityType);
+            throw new IllegalArgumentException("Cannot find any field matching attribute '" + attributeName.toLowerCase(Locale.getDefault())
+                    + "' for " + originalEntityType);
         } else {
             return getFieldName(attributeName, entityType.getSuperclass(), originalEntityType);
         }
@@ -188,12 +218,27 @@ public class CrudRepositoryWriter {
         return constructor.newInstance();
     }
 
-    private <T, ID> void setField(T entity, String fieldName, String attributeValue, Class<ID> primaryKeyType)
-            throws ReflectiveOperationException {
+    private <T> void setField(T entity, String fieldName, String attributeValue) throws ReflectiveOperationException {
         Field field = getField(entity, fieldName);
         field.setAccessible(true);
-        Object fieldValue = createObjectFromString(attributeValue, field, primaryKeyType);
+        Object fieldValue = createObjectFromString(attributeValue, field, JpaUtil.getPrimaryKeyType(entity.getClass()));
         field.set(entity, fieldValue);
+        if (fieldValue.getClass().getAnnotation(Entity.class) != null) {
+            potentiallyAddValueToCollection(fieldValue, fieldName, entity);
+        }
+    }
+
+    private <T> void potentiallyAddValueToCollection(Object entity, String fieldName, T value) {
+        for (Field field : entity.getClass().getDeclaredFields()) {
+            field.setAccessible(true);
+            OneToMany oneToMany = field.getAnnotation(OneToMany.class);
+            if (oneToMany == null) {
+                continue;
+            }
+            if (oneToMany.mappedBy().equals(fieldName)) {
+                addObjectToCollectionField(field, entity, value);
+            }
+        }
     }
 
     private Field getField(Object entity, String fieldName) throws NoSuchFieldException {

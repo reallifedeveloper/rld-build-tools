@@ -2,6 +2,6 @@
 <!DOCTYPE dataset SYSTEM "rld-build-tools.dtd">
 <dataset>
 
-    <TEST_ENTITY />
+    <TEST_ENTITY NAME="foo" />
 
 </dataset>
