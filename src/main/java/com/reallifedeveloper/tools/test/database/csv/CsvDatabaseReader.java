@@ -24,6 +24,7 @@ import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Getter;
+import lombok.ToString;
 
 import com.reallifedeveloper.tools.test.TestUtil;
 import com.reallifedeveloper.tools.test.database.CrudRepositoryWriter;
@@ -105,12 +106,14 @@ public class CsvDatabaseReader {
                         crudRepositoryWriter.addEntitiesFromJoinTable(tableRow, tableName);
                     }
                 }
+                crudRepositoryWriter.fillReferencesBetweenEntities();
             }
         } catch (ReflectiveOperationException | SecurityException e) {
             throw new IllegalStateException("Unexpected problem reading CSV file from '" + resourceName + "'", e);
         }
     }
 
+    @ToString
     private static class CsvTableRow implements DbTableRow {
 
         private final List<String> header;

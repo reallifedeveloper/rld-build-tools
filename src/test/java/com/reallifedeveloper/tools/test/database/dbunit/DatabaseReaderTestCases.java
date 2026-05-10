@@ -9,10 +9,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.repository.CrudRepository;
 
@@ -92,7 +99,9 @@ public interface DatabaseReaderTestCases {
 
         assertEquals(3, repository.count(), "Wrong number of entities in repository: ");
 
+        @Nullable
         TestEntity expected = new TestEntity(42L, "foo");
+        @Nullable
         TestEntity actual = repository.findById(42L).get();
         verifyEntity(expected, actual);
 
@@ -100,7 +109,7 @@ public interface DatabaseReaderTestCases {
         actual = repository.findById(4711L).get();
         verifyEntity(expected, actual);
 
-        expected = new TestEntity(9999L, "");
+        expected = new TestEntity(9999L, null);
         actual = repository.findById(9999L).get();
         verifyEntity(expected, actual);
     }
@@ -120,18 +129,25 @@ public interface DatabaseReaderTestCases {
                 UUID.fromString("1b262fbd-5cf7-4cb6-9c91-9a5a601816d2"), "t1");
         TestEntityWithoutRepository testEntityWithoutRepository2 = new TestEntityWithoutRepository(
                 UUID.fromString("dec505f2-2e23-4814-8815-3dbd5078961c"), "t2");
+        Map<UUID, TestEntityWithoutRepository> mappedEntities = new HashMap<>();
+        mappedEntities.put(testEntityWithoutRepository1.id(), testEntityWithoutRepository1);
+        mappedEntities.put(testEntityWithoutRepository2.id(), testEntityWithoutRepository2);
         DbUnitTestEntity expected = new DbUnitTestEntity((byte) 1, (short) 2, 3, 4L, 5.0f, 6.0, false, 'a', "foo",
-                TestUtil.parseDate("2014-01-01"), TestEnum.FOO, new BigDecimal("1234.56"), new BigInteger("9999999999"),
-                new TestEntity(42L, "foo"), Arrays.asList(new TestEntity[] { testEntity42, testEntity4711 }),
-                Arrays.asList(new TestEntityWithoutRepository[] { testEntityWithoutRepository1, testEntityWithoutRepository2 }));
+                TestUtil.parseDate("2014-01-01"), LocalDate.parse("2026-05-10"), LocalDateTime.parse("2026-05-10T10:45:00"),
+                ZonedDateTime.parse("2026-05-10T12:45:00+02:00"), TestEnum.FOO, new BigDecimal("1234.56"), new BigInteger("9999999999"),
+                Arrays.asList("foo", "bar"), new TestEntity(42L, "foo"), Arrays.asList(new TestEntity[] { testEntity42, testEntity4711 }),
+                testEntityWithoutRepository2,
+                Arrays.asList(new TestEntityWithoutRepository[] { testEntityWithoutRepository1, testEntityWithoutRepository2 }),
+                mappedEntities);
         testEntityWithoutRepository1.dbUnitTestEntity(expected);
         testEntityWithoutRepository2.dbUnitTestEntity(expected);
         DbUnitTestEntity actual = repository.findById(3).get();
         verifyEntity(expected, actual);
 
         expected = new DbUnitTestEntity((byte) 10, (short) 11, 12, 13L, 14.0f, 15.0, true, 'b', "bar", TestUtil.parseDate("2015-01-01"),
-                TestEnum.BAR, new BigDecimal("-1000.01"), new BigInteger("8888888888"), new TestEntity(4711L, "bar"),
-                Collections.emptyList(), Collections.emptyList());
+                LocalDate.parse("2026-05-10"), LocalDateTime.parse("2026-05-10T11:45:00"), ZonedDateTime.parse("2026-05-10T13:45:00+02:00"),
+                TestEnum.BAR, new BigDecimal("-1000.001"), new BigInteger("8888888888"), Arrays.asList("baz"), new TestEntity(4711L, "bar"),
+                Collections.emptyList(), testEntityWithoutRepository1, Collections.emptyList(), Collections.emptyMap());
         actual = repository.findById(12).get();
         verifyEntity(expected, actual);
     }
@@ -195,7 +211,14 @@ public interface DatabaseReaderTestCases {
             assertEquals(expected.c().charValue(), actual.c().charValue(), "Wrong char field: ");
             assertEquals(expected.string(), actual.string(), "Wrong String field: ");
             assertEquals(expected.date(), actual.date(), "Wrong date field: ");
+            assertEquals(expected.localDate(), actual.localDate());
+            assertEquals(expected.localDateTime(), actual.localDateTime());
+            assertEquals(expected.zonedDateTime(), actual.zonedDateTime());
             assertEquals(expected.testEnum(), actual.testEnum(), "Wrong enum field: ");
+            assertEquals(expected.bd(), actual.bd(), "Wrong BigDwcimal field: ");
+            assertEquals(expected.bi(), actual.bi(), "Wrong BigInteger field: ");
+            assertEquals(expected.strings(), actual.strings());
+            verifyEntity(expected.testEntityWithoutRepository(), actual.testEntityWithoutRepository());
             if (expected.testEntity() == null) {
                 assertNull(actual.testEntity(), "Test entity should be null");
             } else {
@@ -210,10 +233,15 @@ public interface DatabaseReaderTestCases {
             for (int i = 0; i < expected.testEntitiesWithoutRepository().size(); i++) {
                 verifyEntity(expected.testEntitiesWithoutRepository().get(0), actual.testEntitiesWithoutRepository().get(0));
             }
+            assertEquals(expected.mappedEntitiesWithoutRepository().size(), actual.mappedEntitiesWithoutRepository().size(),
+                    "Wrong number of mapped test entities witout repository");
+            for (Entry<UUID, TestEntityWithoutRepository> entry : expected.mappedEntitiesWithoutRepository().entrySet()) {
+                verifyEntity(entry.getValue(), actual.mappedEntitiesWithoutRepository().get(entry.getKey()));
+            }
         }
     }
 
-    static void verifyEntity(TestEntityWithoutRepository expected, TestEntityWithoutRepository actual) {
+    static void verifyEntity(TestEntityWithoutRepository expected, @Nullable TestEntityWithoutRepository actual) {
         assertNotNull(actual, "Entity should not be null");
         assertEquals(expected.id(), actual.id(), "Wrong id field: ");
         assertEquals(expected.name(), actual.name(), "Wrong name field: ");

@@ -3,16 +3,20 @@ package com.reallifedeveloper.tools.test.database;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -23,13 +27,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.repository.CrudRepository;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.OneToOne;
 import lombok.Getter;
 
 import com.reallifedeveloper.tools.test.TestUtil;
@@ -39,7 +43,7 @@ import com.reallifedeveloper.tools.test.TestUtil;
  * {@link DbTableRow}.
  * <p>
  * This can be useful for inserting test data into a repository, irrespective of whether the repository connects to a real database or not.
- *
+ * <p>
  * TODO: The current implementation only has basic support for "to many" associations (there must be a &amp;JoinTable annotation on a field,
  * with &amp;JoinColumn annotations), and for enums (an enum must be stored as a string).
  *
@@ -47,7 +51,7 @@ import com.reallifedeveloper.tools.test.TestUtil;
  */
 @Getter
 @SuppressWarnings("PMD")
-@SuppressFBWarnings(value = "IMPROPER_UNICODE", justification = "equalsIgnoreCase only being used to compare table, column or field names")
+@SuppressFBWarnings(value = { "CRLF_INJECTION_LOGS", "IMPROPER_UNICODE" })
 public class CrudRepositoryWriter {
 
     private static final Logger LOG = LoggerFactory.getLogger(CrudRepositoryWriter.class);
@@ -64,36 +68,45 @@ public class CrudRepositoryWriter {
      * @param <T>                  the type of entities in the repository
      * @param <E>                  the type of entity being created
      * @param <ID>                 the type of the primary key of the entities in the repository
-     *
      * @param tableRow             the {@code TableRow} with the data to insert into the fields of the newly created entity
      * @param repositoryEntityType the class object representing {@code T}, i.e., the type ofrepository entities
      * @param entityType           the class object representing {@code E}, i.e., the type of entity being created, or {@code null}
      * @param repository           the repository in which to insert the newly created entity
      * @param tableName            the name of the database table where the entity should be stored
-     *
      * @return {@code true} if an entity was created, no matter if it was saved in the repository, {@code false} otherwise
-     *
      * @throws ReflectiveOperationException if some reflection operation failed creating the entity or setting is fields
      */
-    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "Logging of entities only")
     public <T, E, ID extends Serializable> boolean writeEntity(DbTableRow tableRow, Class<T> repositoryEntityType,
             @Nullable Class<E> entityType, CrudRepository<T, ID> repository, String tableName) throws ReflectiveOperationException {
-        if (entityType == null || entityType.getAnnotation(Entity.class) == null || !getTableName(entityType).equalsIgnoreCase(tableName)) {
+        if (entityType == null) {
+            return false;
+        }
+        if (entityType.getAnnotation(Embeddable.class) != null) {
+            return writeEmbeddable(tableRow, repositoryEntityType, entityType, repository, tableName);
+        }
+        if (entityType.getAnnotation(Entity.class) == null || !JpaUtil.getTableName(entityType).equalsIgnoreCase(tableName)) {
             return false;
         }
         E entity = createEntity(entityType);
         for (DbTableField column : tableRow.columns()) {
-            String fieldName = getFieldName(column.name(), entityType);
+            String fieldName = JpaUtil.getFieldName(column.name(), entityType);
             setField(entity, fieldName, column.value());
         }
         LOG.debug("Saving entity {}", entity);
         entities.add(entity);
         classes.add(entity.getClass());
         if (entityType.equals(repositoryEntityType)) {
-            T entity2 = repositoryEntityType.cast(entity);
-            repository.save(entity2);
+            T entityToSave = repositoryEntityType.cast(entity);
+            repository.save(entityToSave);
         }
         return true;
+    }
+
+    @SuppressWarnings("UnusedVariable")
+    private <T, E, ID extends Serializable> boolean writeEmbeddable(DbTableRow tableRow, Class<T> repositoryEntityType,
+            @Nullable Class<E> entityType, CrudRepository<T, ID> repository, String tableName) {
+        LOG.debug("Saving embeddable {}", tableRow);
+        throw new UnsupportedOperationException("writeEmbeddable not yet implemented");
     }
 
     /**
@@ -118,21 +131,117 @@ public class CrudRepositoryWriter {
     }
 
     /**
-     * A helper method to get the table name associated with an {@link Entity}.
+     * Goes through all entities that have been saved, trying to fix missing associations.
      *
-     * @param <T>        the type of entity
-     *
-     * @param entityType the class object representing {@code T}
-     *
-     * @return the table name associated with {@code entityType}
+     * @throws ReflectiveOperationException if something went wrong using reflection to analyze the entities
      */
-    public static <T> String getTableName(Class<T> entityType) {
-        Table table = entityType.getAnnotation(Table.class);
-        if (table == null) {
-            return entityType.getSimpleName();
-        } else {
-            return table.name();
+    public void fillReferencesBetweenEntities() throws ReflectiveOperationException {
+        for (Object entity : entities) {
+            for (Field field : entity.getClass().getDeclaredFields()) {
+                field.setAccessible(true);
+                OneToOne oneToOne = field.getAnnotation(OneToOne.class);
+                if (oneToOne != null) {
+                    handleOneToOne(entity, field, oneToOne);
+                }
+                OneToMany oneToMany = field.getAnnotation(OneToMany.class);
+                if (oneToMany != null) {
+                    handleOneToMany(entity, field, oneToMany);
+                }
+            }
         }
+    }
+
+    private void handleOneToOne(Object entity, Field field, OneToOne oneToOne) throws IllegalAccessException, NoSuchFieldException {
+        String mappedBy = oneToOne.mappedBy();
+        if (mappedBy == null || mappedBy.isEmpty()) {
+            JoinColumn joinColumn = field.getAnnotation(JoinColumn.class);
+            if (joinColumn != null) {
+                mappedBy = JpaUtil.getFieldName(joinColumn.name(), field.getType());
+            }
+        }
+        if (mappedBy == null || mappedBy.isEmpty()) {
+            throw new IllegalStateException("OneToOne field " + entity.getClass().getName() + "." + field.getName()
+                    + " has no mappedBy and no JoinColumn annotation");
+        }
+        Object id = JpaUtil.getIdValue(entity);
+        List<?> entitiesToMap = findEntitiesByClassAndField(field.getType(), mappedBy, id);
+        if (entitiesToMap.size() > 1) {
+            throw new IllegalStateException("Found multiple candidates for OneToOne mapping: entity=" + entity + ", field={}" + field);
+        }
+        Object value = entitiesToMap.isEmpty() ? null : entitiesToMap.get(0);
+        LOG.debug("Setting OneToOne field {} to {}", entity.getClass().getName() + "." + field.getName(), value);
+        field.set(entity, value);
+    }
+
+    private void handleOneToMany(Object entity, Field field, OneToMany oneToMany) throws IllegalAccessException, NoSuchFieldException {
+        Class<?> collectionType = field.getType();
+        if (Collection.class.isAssignableFrom(collectionType)) {
+            saveEntityInCollection(entity, field, oneToMany);
+        } else if (Map.class.isAssignableFrom(collectionType)) {
+            saveEntityInMap(entity, field, oneToMany);
+        }
+    }
+
+    private void saveEntityInCollection(Object entity, Field field, OneToMany oneToMany)
+            throws IllegalAccessException, NoSuchFieldException {
+        LOG.trace("saveEntityInCollection: entity={}, field={}, oneToMany={}", entity, field, oneToMany);
+        LOG.trace("Not yet implemented");
+    }
+
+    private void saveEntityInMap(Object entity, Field field, OneToMany oneToMany) throws IllegalAccessException, NoSuchFieldException {
+        LOG.trace("saveEntityInMap: entity={}, field={}, oneToMany={}", entity, field, oneToMany);
+        ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
+        Type[] targetTypes = parameterizedType.getActualTypeArguments();
+        Class<?> targetClass = getClass(targetTypes[1].getTypeName());
+        String mappedBy = oneToMany.mappedBy();
+        if (mappedBy == null || mappedBy.isEmpty()) {
+            JoinColumn joinColumn = field.getAnnotation(JoinColumn.class);
+            if (joinColumn != null) {
+                mappedBy = JpaUtil.getFieldName(joinColumn.name(), targetClass);
+            }
+        }
+        if (mappedBy == null || mappedBy.isEmpty()) {
+            throw new IllegalStateException("OneToMany field " + entity.getClass().getName() + "." + field.getName()
+                    + " has no mappedBy and no JoinColumn annotation");
+        }
+        Object id = JpaUtil.getIdValue(entity);
+        List<?> entitiesToMap = findEntitiesByClassAndField(targetClass, mappedBy, id);
+        JpaUtil.addEntitiesToMapField(field, entity, entitiesToMap);
+    }
+
+    private Class<?> getClass(String className) {
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Class " + className + " not found", e);
+        }
+    }
+
+    private <T> List<T> findEntitiesByClassAndField(Class<T> entityClass, String fieldName, Object value)
+            throws IllegalAccessException, NoSuchFieldException {
+        LOG.trace("Finding entities by class={}, field={} and value={}", entityClass, fieldName, value);
+        List<T> foundEntities = new ArrayList<>();
+        for (T entity : entitiesOfType(entityClass)) {
+            Field field = entity.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            // LOG.debug("{}.{}={}", entityClass.getName(), fieldName, field.get(entity));
+            Object fieldValue = field.get(entity);
+            if (fieldValue == null) {
+                continue;
+            }
+            if (fieldValue.equals(value)) {
+                foundEntities.add(entity);
+            } else if (fieldValue.getClass().getAnnotation(Entity.class) != null && JpaUtil.getIdValue(fieldValue).equals(value)) {
+                foundEntities.add(entity);
+            }
+        }
+        return foundEntities;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> List<T> entitiesOfType(Class<T> entityType) {
+        // LOG.debug("Getting entities of type {}", entityType.getName());
+        return (List<T>) entities.stream().filter(entity -> entity.getClass().equals(entityType)).toList();
     }
 
     private Optional<Field> joinTableField(String tableName) {
@@ -164,52 +273,7 @@ public class CrudRepositoryWriter {
         }
         Object lhs = findEntity(lhsPrimaryKey, joinTableField.getDeclaringClass());
         Object rhs = findEntity(rhsPrimaryKey, targetType);
-        addObjectToCollectionField(joinTableField, lhs, rhs);
-    }
-
-    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "Only entity values being logged")
-    private void addObjectToCollectionField(Field field, Object lhs, Object rhs) {
-        try {
-            Method add = field.getType().getMethod("add", Object.class);
-            LOG.debug("Calling add method on field {} of entity {} to add entity {} to collection", field.getName(), lhs, rhs);
-            add.invoke(field.get(lhs), rhs);
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException("Method 'add' not found -- field " + field + " should be a Collection", e);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new IllegalStateException("Unexpected problem", e);
-        }
-    }
-
-    private <T> String getFieldName(String attributeName, Class<T> entityType) {
-        return getFieldName(attributeName, entityType, entityType);
-    }
-
-    private <T> String getFieldName(String attributeName, Class<T> entityType, Class<?> originalEntityType) {
-        for (Field field : entityType.getDeclaredFields()) {
-            if (checkFieldName(attributeName, field)) {
-                return field.getName();
-            }
-        }
-        if (entityType.getSuperclass() == null) {
-            throw new IllegalArgumentException("Cannot find any field matching attribute '" + attributeName.toLowerCase(Locale.getDefault())
-                    + "' for " + originalEntityType);
-        } else {
-            return getFieldName(attributeName, entityType.getSuperclass(), originalEntityType);
-        }
-    }
-
-    private boolean checkFieldName(String attributeName, Field field) {
-        Column column = field.getAnnotation(Column.class);
-        if (column == null || column.name() == null) {
-            JoinColumn joinColumn = field.getAnnotation(JoinColumn.class);
-            if (joinColumn == null || joinColumn.name() == null) {
-                return field.getName().equalsIgnoreCase(attributeName);
-            } else {
-                return joinColumn.name().equalsIgnoreCase(attributeName);
-            }
-        } else {
-            return column.name().equalsIgnoreCase(attributeName);
-        }
+        JpaUtil.addObjectToCollectionField(joinTableField, lhs, rhs);
     }
 
     private <T> T createEntity(Class<T> entityType) throws ReflectiveOperationException {
@@ -219,11 +283,12 @@ public class CrudRepositoryWriter {
     }
 
     private <T> void setField(T entity, String fieldName, String attributeValue) throws ReflectiveOperationException {
-        Field field = getField(entity, fieldName);
+        Field field = JpaUtil.getField(entity, fieldName);
         field.setAccessible(true);
         Object fieldValue = createObjectFromString(attributeValue, field, JpaUtil.getPrimaryKeyType(entity.getClass()));
+        LOG.trace("Setting field {} to {}", fieldName, fieldValue);
         field.set(entity, fieldValue);
-        if (fieldValue.getClass().getAnnotation(Entity.class) != null) {
+        if (fieldValue != null && fieldValue.getClass().getAnnotation(Entity.class) != null) {
             potentiallyAddValueToCollection(fieldValue, fieldName, entity);
         }
     }
@@ -236,25 +301,12 @@ public class CrudRepositoryWriter {
                 continue;
             }
             if (oneToMany.mappedBy().equals(fieldName)) {
-                addObjectToCollectionField(field, entity, value);
+                JpaUtil.addObjectToCollectionField(field, entity, value);
             }
         }
     }
 
-    private Field getField(Object entity, String fieldName) throws NoSuchFieldException {
-        Class<?> entityType = entity.getClass();
-        while (entityType != null) {
-            for (Field field : entityType.getDeclaredFields()) {
-                if (field.getName().equalsIgnoreCase(fieldName)) {
-                    return field;
-                }
-            }
-            entityType = entityType.getSuperclass();
-        }
-        throw new NoSuchFieldException(fieldName);
-    }
-
-    private Object createObjectFromString(String s, Field field, Class<?> primaryKeyType) {
+    private @Nullable Object createObjectFromString(String s, Field field, Class<?> primaryKeyType) {
         Class<?> type;
         if (field.getAnnotation(Id.class) != null) {
             type = primaryKeyType;
@@ -264,7 +316,11 @@ public class CrudRepositoryWriter {
         return createObjectFromString(s, type);
     }
 
-    private Object createObjectFromString(String s, Class<?> type) {
+    @SuppressWarnings("checkstyle:noReturnNull")
+    private @Nullable Object createObjectFromString(String s, Class<?> type) {
+        if (s == null || s.isEmpty()) {
+            return null;
+        }
         if (type == Byte.class) {
             return Byte.parseByte(s);
         } else if (type == Short.class) {
@@ -285,12 +341,20 @@ public class CrudRepositoryWriter {
             return s;
         } else if (type == Date.class) {
             return TestUtil.parseDate(s);
+        } else if (type == LocalDate.class) {
+            return LocalDate.parse(s);
+        } else if (type == LocalDateTime.class) {
+            return LocalDateTime.parse(s);
+        } else if (type == ZonedDateTime.class) {
+            return ZonedDateTime.parse(s);
         } else if (type == BigDecimal.class) {
             return new BigDecimal(s);
         } else if (type == BigInteger.class) {
             return new BigInteger(s);
         } else if (type == UUID.class) {
             return UUID.fromString(s);
+        } else if (type == List.class) {
+            return Arrays.asList(s.replaceAll("[{}]", "").split(","));
         } else {
             return findEntity(s, type);
         }
@@ -304,7 +368,7 @@ public class CrudRepositoryWriter {
         }
         for (Object entity : entities) {
             if (entity.getClass().equals(entityType)) {
-                Field idField = getIdField(entity);
+                Field idField = JpaUtil.getIdField(entity);
                 idField.setAccessible(true);
                 try {
                     Object id = idField.get(entity);
@@ -320,25 +384,11 @@ public class CrudRepositoryWriter {
         throw new IllegalArgumentException("Entity of " + entityType + " with primary key " + strId + " not found");
     }
 
-    private Field getIdField(Object entity) {
-        Class<?> entityType = entity.getClass();
-        while (entityType != null) {
-            for (Field field : entityType.getDeclaredFields()) {
-                if (field.getDeclaredAnnotation(Id.class) != null) {
-                    return field;
-                }
-            }
-            entityType = entityType.getSuperclass();
-        }
-        throw new IllegalStateException("Id field not found for entity " + entity);
-    }
-
     /**
      * Represents one row of data from the database.
      *
      * @author RealLifeDeveloper
      */
-    @SuppressWarnings("PMD.ImplicitFunctionalInterface")
     public interface DbTableRow {
         /**
          * Gives the fields of this row.

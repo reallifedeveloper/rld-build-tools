@@ -36,10 +36,14 @@ public class DbUnitDtdGeneratorTest {
                 DATE CDATA #IMPLIED
                 F CDATA #IMPLIED
                 L CDATA #IMPLIED
+                LOCALDATE CDATA #IMPLIED
+                LOCALDATETIME CDATA #IMPLIED
                 S CDATA #IMPLIED
                 STRING CDATA #IMPLIED
                 TESTENUM CDATA #IMPLIED
+                ZONEDDATETIME CDATA #IMPLIED
                 TESTENTITY_ID CDATA #IMPLIED
+                ONE_TO_ONE_DB_UNIT_TEST_ENTITY_ID CDATA #IMPLIED
             >
 
             <!ELEMENT DBUNITTESTENTITY_TESTENTITY EMPTY>
@@ -57,6 +61,7 @@ public class DbUnitDtdGeneratorTest {
             <!ELEMENT TEST_ENTITY_WITHOUT_REPOSITORY EMPTY>
             <!ATTLIST TEST_ENTITY_WITHOUT_REPOSITORY
                 ID CDATA #REQUIRED
+                ONE_TO_ONE_DB_UNIT_TEST_ENTITY_ID CDATA #IMPLIED
                 NAME CDATA #IMPLIED
                 DB_UNIT_TEST_ENTITY_ID CDATA #IMPLIED
             >

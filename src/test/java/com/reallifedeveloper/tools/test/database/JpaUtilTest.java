@@ -52,6 +52,18 @@ public class JpaUtilTest {
         assertEquals("entityType without primary key annotation: entityType=" + EntityWithoutId.class, e.getMessage());
     }
 
+    @Test
+    public void getNonExistingField() {
+        Exception e = assertThrows(NoSuchFieldException.class, () -> JpaUtil.getField("myEntity", "noSuchField"));
+        assertEquals("noSuchField", e.getMessage());
+    }
+
+    @Test
+    public void getNonExistingIdField() {
+        Exception e = assertThrows(IllegalStateException.class, () -> JpaUtil.getIdField("myEntity"));
+        assertEquals("Id field not found for entity myEntity", e.getMessage());
+    }
+
     @Entity
     @Getter
     private static class SimpleEntity {

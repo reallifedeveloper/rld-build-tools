@@ -14,7 +14,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.reallifedeveloper" level="debug" />
+    <logger name="com.reallifedeveloper" level="trace" />
 
     <root level="error">
         <appender-ref ref="LIST" level="info" />

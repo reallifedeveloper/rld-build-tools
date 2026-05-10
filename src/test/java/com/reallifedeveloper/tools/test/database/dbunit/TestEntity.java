@@ -1,5 +1,6 @@
 package com.reallifedeveloper.tools.test.database.dbunit;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -9,9 +10,10 @@ import jakarta.persistence.Table;
 public class TestEntity extends AbstractEntity<Long> {
 
     @Column(name = "NAME")
+    @Nullable
     private String name;
 
-    public TestEntity(Long id, String name) {
+    public TestEntity(Long id, @Nullable String name) {
         super(id);
         this.name = name;
     }
@@ -20,7 +22,7 @@ public class TestEntity extends AbstractEntity<Long> {
     TestEntity() {
     }
 
-    public String name() {
+    public @Nullable String name() {
         return name;
     }
 }

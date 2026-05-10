@@ -110,6 +110,7 @@ public final class DbUnitFlatXmlReader {
                     crudRepositoryWriter.addEntitiesFromJoinTable(tableRow, tableName);
                 }
             }
+            crudRepositoryWriter.fillReferencesBetweenEntities();
         } catch (ReflectiveOperationException | SecurityException e) {
             throw new IllegalStateException("Unexpected problem reading XML file from '" + resourceName + "'", e);
         }

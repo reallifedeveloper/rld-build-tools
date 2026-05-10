@@ -216,6 +216,12 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
     }
 
     @Test
+    public void constructorWithNullPrimaryKeyGeneratorShouldThrowException() {
+        Exception e = assertThrows(IllegalArgumentException.class, () -> new InMemoryJpaRepository<>(null));
+        assertEquals("primaryKeyGenerator must not be null", e.getMessage());
+    }
+
+    @Test
     public void testToString() {
         assertEquals("InMemoryJpaRepository{entities={}}", repository().toString(), "Unexpected result from toString: ");
     }

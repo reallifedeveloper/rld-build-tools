@@ -1,3 +1,3 @@
-id;name;db_unit_test_entity_id
-1b262fbd-5cf7-4cb6-9c91-9a5a601816d2;t1;3
-dec505f2-2e23-4814-8815-3dbd5078961c;t2;3
+id;name;db_unit_test_entity_id;one_to_one_db_unit_test_entity_id
+1b262fbd-5cf7-4cb6-9c91-9a5a601816d2;t1;3;12
+dec505f2-2e23-4814-8815-3dbd5078961c;t2;3;3

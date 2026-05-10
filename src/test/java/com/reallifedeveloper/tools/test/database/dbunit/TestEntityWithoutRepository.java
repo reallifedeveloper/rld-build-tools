@@ -3,6 +3,7 @@ package com.reallifedeveloper.tools.test.database.dbunit;
 import java.util.UUID;
 
 import jakarta.annotation.Nullable;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -30,6 +31,10 @@ public class TestEntityWithoutRepository {
     @JoinColumn(name = "db_unit_test_entity_id")
     @Nullable
     private DbUnitTestEntity dbUnitTestEntity;
+
+    @Column(name = "one_to_one_db_unit_test_entity_id")
+    @Nullable
+    private Integer dbUnitTestEntityId;
 
     public TestEntityWithoutRepository(UUID id, String name) {
         this.id = id;
