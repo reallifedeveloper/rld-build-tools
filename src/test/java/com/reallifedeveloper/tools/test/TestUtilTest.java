@@ -25,6 +25,10 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import lombok.Getter;
+import lombok.ToString;
+import lombok.experimental.Accessors;
+
 public class TestUtilTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestUtilTest.class);
@@ -211,9 +215,40 @@ public class TestUtilTest {
     }
 
     @Test
-    public void getFieldValue() throws Exception {
+    public void getFieldValue() {
         Foo foo = new Foo();
         assertEquals("foo", TestUtil.getFieldValue(foo, "s"));
+    }
+
+    @Test
+    @SuppressWarnings("NullAway")
+    public void getNullFieldValue() {
+        Foo foo = new Foo();
+        foo.s = null;
+        assertNull(TestUtil.getFieldValue(foo, "s"));
+    }
+
+    @Test
+    public void getNestedFieldValue() {
+        Foo foo = new Foo();
+        assertEquals("nested", TestUtil.getFieldValue(foo, "nested.s"));
+    }
+
+    @Test
+    @SuppressWarnings("NullAway")
+    public void getNestedNullFieldValue() {
+        Foo foo = new Foo();
+        foo.nested.s = null;
+        assertNull(TestUtil.getFieldValue(foo, "nested.s"));
+    }
+
+    @Test
+    @SuppressWarnings("NullAway")
+    public void getNestedFieldValueWithNullTopField() {
+        Foo foo = new Foo();
+        foo.nested = null;
+        // The getFieldValue method is forgiving, returning null if an intermediate field is null.
+        assertNull(TestUtil.getFieldValue(foo, "nested.s"));
     }
 
     @Test
@@ -221,6 +256,13 @@ public class TestUtilTest {
         Foo foo = new Foo();
         Exception e = assertThrows(IllegalStateException.class, () -> TestUtil.getFieldValue(foo, "noSuchField"));
         assertEquals("Error getting value of field noSuchField of object " + foo, e.getMessage());
+    }
+
+    @Test
+    public void getValueOfNonExistingNestedField() {
+        Foo foo = new Foo();
+        Exception e = assertThrows(IllegalStateException.class, () -> TestUtil.getFieldValue(foo, "nested.noSuchField"));
+        assertEquals("Error getting value of field noSuchField of object " + foo.nested(), e.getMessage());
     }
 
     @Test
@@ -237,11 +279,16 @@ public class TestUtilTest {
         assertEquals("Arguments must not be null: obj=foo, fieldName=null", e.getMessage());
     }
 
+    @Getter
+    @Accessors(fluent = true)
+    @ToString
     private static class Foo {
         private String s = "foo";
+        private Nested nested = new Nested();
 
-        String s() {
-            return s;
+        @ToString
+        private static class Nested {
+            private String s = "nested";
         }
     }
 

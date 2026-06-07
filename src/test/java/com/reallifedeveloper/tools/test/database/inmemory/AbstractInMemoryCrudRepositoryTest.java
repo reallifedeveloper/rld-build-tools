@@ -26,7 +26,12 @@ public abstract class AbstractInMemoryCrudRepositoryTest {
     protected abstract <T extends AbstractInMemoryCrudRepository<TestEntity, Integer>> T repository();
 
     @SuppressWarnings("TypeParameterUnusedInFormals")
-    protected abstract <T extends TestEntity> T createTestEntity(@Nullable Integer id, String name);
+    protected abstract <T extends TestEntity> T createTestEntity(@Nullable Integer id, String name, @Nullable TestEntity testentity);
+
+    @SuppressWarnings("TypeParameterUnusedInFormals")
+    protected <T extends TestEntity> T createTestEntity(@Nullable Integer id, String name) {
+        return createTestEntity(id, name, null);
+    }
 
     @Test
     public void findByField() {
@@ -48,6 +53,26 @@ public abstract class AbstractInMemoryCrudRepositoryTest {
         assertEquals(1, foundEntities.size(), "Wrong number of 'baz' entities: ");
         assertEquals(4, foundEntities.get(0).getId().longValue(), "Wrong id for first 'baz' entity: ");
         assertEquals("baz", foundEntities.get(0).getName(), "Wrong name for first 'baz' entity: ");
+    }
+
+    @Test
+    public void findByNestedField() {
+        TestEntity foo1 = repository().save(createTestEntity(1, "foo", null));
+        TestEntity bar2 = repository().save(createTestEntity(2, "bar", foo1));
+        TestEntity foo3 = repository().save(createTestEntity(3, "foo", bar2));
+        TestEntity baz4 = repository().save(createTestEntity(4, "baz", foo3));
+        List<TestEntity> foundEntities = repository().findByField("testEntity.name", "foo");
+        assertEquals(2, foundEntities.size(), "Wrong number of 'foo' entities: ");
+        assertEquals(bar2, foundEntities.get(0));
+        assertEquals(baz4, foundEntities.get(1));
+        foundEntities = repository().findByField("testEntity.name", "bar");
+        assertEquals(1, foundEntities.size());
+        assertEquals(foo3, foundEntities.get(0));
+        foundEntities = repository().findByField("testEntity.name", "baz");
+        assertEquals(0, foundEntities.size());
+        foundEntities = repository().findByField("testEntity.name", null);
+        assertEquals(1, foundEntities.size());
+        assertEquals(foo1, foundEntities.get(0));
     }
 
     @Test
@@ -103,6 +128,17 @@ public abstract class AbstractInMemoryCrudRepositoryTest {
         entity = repository().findByUniqueField("name", "baz").get();
         assertEquals(3, entity.getId().longValue(), "Wrong id for 'baz' entity: ");
         assertEquals("baz", entity.getName(), "Wrong name for 'baz' entity: ");
+    }
+
+    @Test
+    public void findByUniqueNestedField() {
+        TestEntity foo1 = repository().save(createTestEntity(1, "foo", null));
+        TestEntity bar2 = repository().save(createTestEntity(2, "bar", foo1));
+        TestEntity baz3 = repository().save(createTestEntity(3, "baz", bar2));
+        assertEquals(foo1, repository().findByUniqueField("testEntity.name", null).get());
+        assertEquals(bar2, repository().findByUniqueField("testEntity.name", "foo").get());
+        assertEquals(baz3, repository().findByUniqueField("testEntity.name", "bar").get());
+        assertTrue(repository().findByUniqueField("testEntity.name", "baz").isEmpty());
     }
 
     @Test

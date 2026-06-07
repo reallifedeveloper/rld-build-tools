@@ -28,6 +28,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  *
  * @author RealLifeDeveloper
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class TestUtil {
 
     /**
@@ -177,9 +178,22 @@ public final class TestUtil {
 
     /**
      * Gives the value of an object's field, which may be private.
+     * <p>
+     * This also works with nested fields, so if {@code fieldName} is {@code "a.b.c"}, the method does something like the following:
+     *
+     * <pre>
+     * Object temp1 = obj.a;
+     * Object temp2 = temp1.b;
+     * Object result = temp2.c;
+     * return result;
+     * </pre>
+     *
+     * For nested fields, the method is "forgiving", in that if some intermediate field is {@code null}, the method returns {@code null}
+     * instead of throwing an exception. So in the example above, if {@code temp1.b} is {@code null}, the method would return {@code null}
+     * after the second step.
      *
      * @param obj       the object containing the field
-     * @param fieldName the name of the field
+     * @param fieldName the name of the field, may be nested, e.g., {@code "field1.nestedField"}
      *
      * @return the value of the field {@code fieldName} in the object {@code obj}
      *
@@ -188,13 +202,23 @@ public final class TestUtil {
      */
     @SuppressWarnings("PMD.AvoidAccessibilityAlteration")
     public static @Nullable Object getFieldValue(Object obj, String fieldName) {
-        try {
-            Field field = getField(obj, fieldName);
-            field.setAccessible(true);
-            return field.get(obj);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Error getting value of field " + fieldName + " of object " + obj, e);
+        if (obj == null || fieldName == null) {
+            throw new IllegalArgumentException("Arguments must not be null: obj=%s, fieldName=%s".formatted(obj, fieldName));
         }
+        Object fieldValue = obj;
+        for (String singleFieldName : fieldName.split("\\.", -1)) {
+            try {
+                Field field = getField(fieldValue, singleFieldName);
+                field.setAccessible(true);
+                fieldValue = field.get(fieldValue);
+                if (fieldValue == null) {
+                    break;
+                }
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException("Error getting value of field " + singleFieldName + " of object " + fieldValue, e);
+            }
+        }
+        return fieldValue;
     }
 
     private static Field getField(Object obj, String fieldName) throws NoSuchFieldException {

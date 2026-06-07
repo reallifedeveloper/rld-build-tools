@@ -16,12 +16,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MappedSuperclass;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 @SuppressWarnings({ "unchecked", "NullAway" })
@@ -35,8 +37,8 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
     }
 
     @Override
-    protected TestEntityWithFieldAnnotations createTestEntity(Integer id, String name) {
-        return new TestEntityWithFieldAnnotations(id, name);
+    protected TestEntityWithFieldAnnotations createTestEntity(Integer id, String name, TestEntity testEntity) {
+        return new TestEntityWithFieldAnnotations(id, name, testEntity);
     }
 
     @Test
@@ -230,6 +232,8 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
      * A JPA entity that uses field access, i.e., puts JPA annotations on fields.
      */
     @Entity
+    @Getter
+    @AllArgsConstructor
     private static class TestEntityWithFieldAnnotations implements TestEntity {
 
         @Id
@@ -238,20 +242,8 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
         @Column
         private final String name;
 
-        TestEntityWithFieldAnnotations(Integer id, String name) {
-            this.id = id;
-            this.name = name;
-        }
-
-        @Override
-        public Integer getId() {
-            return id;
-        }
-
-        @Override
-        public String getName() {
-            return name;
-        }
+        @ManyToOne
+        private final TestEntity testEntity;
 
         @Override
         public String toString() {
@@ -263,33 +255,22 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
      * A JPA entity that uses property access, i.e., puts JPA annotations on get methods.
      */
     @Entity
+    @Setter
+    @AllArgsConstructor
     @SuppressWarnings("UnusedMethod")
     public static class TestEntityWithMethodAnnotations {
 
         private Long id;
         private String name;
 
-        TestEntityWithMethodAnnotations(Long id, String name) {
-            this.id = id;
-            this.name = name;
-        }
-
         @Id
         Long getId() {
             return id;
         }
 
-        public void setId(Long id) {
-            this.id = id;
-        }
-
         @Column
         String getName() {
             return name;
-        }
-
-        void setName(String name) {
-            this.name = name;
         }
     }
 
@@ -299,19 +280,13 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
      * @param <ID> the type of the primary key
      */
     @MappedSuperclass
+    @Getter
+    @AllArgsConstructor
     @SuppressWarnings("UnusedMethod")
     private abstract static class AbstractEntityWithFieldAnnotations<ID> {
 
         @Id
         private final ID id;
-
-        AbstractEntityWithFieldAnnotations(ID id) {
-            this.id = id;
-        }
-
-        ID getId() {
-            return id;
-        }
     }
 
     /**
@@ -341,14 +316,11 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
      * @param <ID> the type of the primary key
      */
     @MappedSuperclass
+    @AllArgsConstructor
     @SuppressWarnings("UnusedMethod")
     private abstract static class AbstractEntityWithMethodAnnotations<ID> {
 
         private final ID id;
-
-        AbstractEntityWithMethodAnnotations(ID id) {
-            this.id = id;
-        }
 
         @Id
         ID getId() {
