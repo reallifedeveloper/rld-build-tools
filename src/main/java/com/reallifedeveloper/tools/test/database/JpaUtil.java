@@ -286,7 +286,15 @@ public class JpaUtil {
         }
     }
 
-    private static String fieldNameForLogging(Object entity, Field field) {
+    /**
+     * Gives a string representation of an entity's field, as {@code "<entity class>.<field name>"}, useful for logging.
+     *
+     * @param entity the entity holding the field
+     * @param field  the field
+     *
+     * @return the string {@code "<entity class>.<field name>"}
+     */
+    public static String fieldNameForLogging(Object entity, Field field) {
         return entity.getClass().getName() + "." + field.getName();
     }
 }

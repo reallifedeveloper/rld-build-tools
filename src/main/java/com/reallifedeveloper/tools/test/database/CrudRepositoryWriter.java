@@ -160,7 +160,7 @@ public class CrudRepositoryWriter {
             }
         }
         if (mappedBy == null || mappedBy.isEmpty()) {
-            throw new IllegalStateException("OneToOne field " + entity.getClass().getName() + "." + field.getName()
+            throw new IllegalStateException("OneToOne field " + JpaUtil.fieldNameForLogging(entity, field)
                     + " has no mappedBy and no JoinColumn annotation");
         }
         Object id = JpaUtil.getIdValue(entity);
@@ -169,7 +169,7 @@ public class CrudRepositoryWriter {
             throw new IllegalStateException("Found multiple candidates for OneToOne mapping: entity=" + entity + ", field={}" + field);
         }
         Object value = entitiesToMap.isEmpty() ? null : entitiesToMap.get(0);
-        LOG.debug("Setting OneToOne field {} to {}", entity.getClass().getName() + "." + field.getName(), value);
+        LOG.debug("Setting OneToOne field {} to {}", JpaUtil.fieldNameForLogging(entity, field), value);
         field.set(entity, value);
     }
 
@@ -201,7 +201,7 @@ public class CrudRepositoryWriter {
             }
         }
         if (mappedBy == null || mappedBy.isEmpty()) {
-            throw new IllegalStateException("OneToMany field " + entity.getClass().getName() + "." + field.getName()
+            throw new IllegalStateException("OneToMany field " + JpaUtil.fieldNameForLogging(entity, field)
                     + " has no mappedBy and no JoinColumn annotation");
         }
         Object id = JpaUtil.getIdValue(entity);
