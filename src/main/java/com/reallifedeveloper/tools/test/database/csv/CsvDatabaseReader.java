@@ -105,7 +105,7 @@ public class CsvDatabaseReader {
                         crudRepositoryWriter.addEntitiesFromJoinTable(tableRow, tableName);
                     }
                 }
-                crudRepositoryWriter.fillReferencesBetweenEntities();
+                crudRepositoryWriter.fillReferencesBetweenEntities(repository, repositoryEntityType);
             }
         } catch (ReflectiveOperationException | SecurityException e) {
             throw new IllegalStateException("Unexpected problem reading CSV file from '" + resourceName + "'", e);

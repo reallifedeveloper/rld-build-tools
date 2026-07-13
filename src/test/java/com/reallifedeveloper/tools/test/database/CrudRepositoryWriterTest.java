@@ -39,7 +39,8 @@ public class CrudRepositoryWriterTest {
         InMemoryJpaRepository<EntityWithIncorrectMappings, Long> repository = new InMemoryJpaRepository<>();
         DbTableRow tableRow = new TestDbTableRow(new DbTableField("id", "1"), new DbTableField("s", null));
         writer.writeEntity(tableRow, EntityWithIncorrectMappings.class, EntityWithIncorrectMappings.class, repository, "table");
-        Exception e = assertThrows(IllegalStateException.class, () -> writer.fillReferencesBetweenEntities());
+        Exception e = assertThrows(IllegalStateException.class,
+                () -> writer.fillReferencesBetweenEntities(repository, EntityWithIncorrectMappings.class));
         assertEquals("OneToOne field " + EntityWithIncorrectMappings.class.getName() + ".s has no mappedBy and no JoinColumn annotation",
                 e.getMessage());
     }

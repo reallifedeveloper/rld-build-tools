@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -60,12 +61,11 @@ public class DbUnitTestEntity {
             @JoinColumn(name = "dbunit_test_entity_id", referencedColumnName = "id") }, inverseJoinColumns = {
                     @JoinColumn(name = "test_entity_id", referencedColumnName = "id") })
     private List<TestEntity> testEntities = new ArrayList<>();
-    @OneToOne
-    @JoinColumn(name = "one_to_one_db_unit_test_entity_id")
+    @OneToOne(mappedBy = "oneToOneDbUnitTestEntity", cascade = CascadeType.ALL)
     private TestEntityWithoutRepository testEntityWithoutRepository;
-    @OneToMany(mappedBy = "dbUnitTestEntity")
+    @OneToMany(mappedBy = "dbUnitTestEntity", cascade = CascadeType.ALL)
     private List<TestEntityWithoutRepository> testEntitiesWithoutRepository = new ArrayList<>();
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "db_unit_test_entity_id")
     @MapKey(name = "id")
     private Map<UUID, TestEntityWithoutRepository> mappedEntitiesWithoutRepository = new HashMap<>();

@@ -3,11 +3,12 @@ package com.reallifedeveloper.tools.test.database.dbunit;
 import java.util.UUID;
 
 import jakarta.annotation.Nullable;
-import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,14 +28,15 @@ public class TestEntityWithoutRepository {
 
     private String name;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "db_unit_test_entity_id")
     @Nullable
     private DbUnitTestEntity dbUnitTestEntity;
 
-    @Column(name = "one_to_one_db_unit_test_entity_id")
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "one_to_one_db_unit_test_entity_id")
     @Nullable
-    private Integer dbUnitTestEntityId;
+    private DbUnitTestEntity oneToOneDbUnitTestEntity;
 
     public TestEntityWithoutRepository(UUID id, String name) {
         this.id = id;
