@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
@@ -228,6 +229,19 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
         assertEquals("InMemoryJpaRepository{entities={}}", repository().toString(), "Unexpected result from toString: ");
     }
 
+    @Test
+    public void testRepositoryWithIdNotComparableToItself() {
+        // This test verifies that we can declare a repository with a primary key type that is not directly caomparable to itself.
+        InMemoryJpaRepository<LocalDateEntity, LocalDate> localDateRepository = new InMemoryJpaRepository<>();
+        localDateRepository.save(new LocalDateEntity(LocalDate.parse("2026-01-15"), "bar"));
+        localDateRepository.save(new LocalDateEntity(LocalDate.parse("2026-01-01"), "foo"));
+        localDateRepository.save(new LocalDateEntity(LocalDate.parse("2026-01-31"), "baz"));
+        assertEquals(3, localDateRepository.count());
+        assertEquals("foo", localDateRepository.findById(LocalDate.parse("2026-01-01")).get().getName());
+        assertEquals("bar", localDateRepository.findById(LocalDate.parse("2026-01-15")).get().getName());
+        assertEquals("baz", localDateRepository.findById(LocalDate.parse("2026-01-31")).get().getName());
+    }
+
     /**
      * A JPA entity that uses field access, i.e., puts JPA annotations on fields.
      */
@@ -402,5 +416,17 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
             }
 
         }
+    }
+
+    @Entity
+    @AllArgsConstructor
+    @NoArgsConstructor(access = AccessLevel.PACKAGE)
+    private static class LocalDateEntity {
+        @Id
+        private LocalDate date;
+
+        @Column
+        @Getter
+        private String name;
     }
 }

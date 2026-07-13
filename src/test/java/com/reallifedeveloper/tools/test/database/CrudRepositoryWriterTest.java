@@ -1,4 +1,4 @@
-package com.reallifedeveloper.tools.test.database.csv;
+package com.reallifedeveloper.tools.test.database;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -17,9 +17,9 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
-import com.reallifedeveloper.tools.test.database.CrudRepositoryWriter;
 import com.reallifedeveloper.tools.test.database.CrudRepositoryWriter.DbTableField;
 import com.reallifedeveloper.tools.test.database.CrudRepositoryWriter.DbTableRow;
+import com.reallifedeveloper.tools.test.database.csv.CsvDatabaseReaderTest;
 import com.reallifedeveloper.tools.test.database.dbunit.DbUnitFlatXmlReaderTest;
 import com.reallifedeveloper.tools.test.database.inmemory.InMemoryJpaRepository;
 

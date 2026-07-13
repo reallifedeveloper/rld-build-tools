@@ -23,7 +23,7 @@ import jakarta.persistence.IdClass;
  *
  * @author RealLifeDeveloper
  */
-public class InMemoryJpaRepository<T, ID extends Comparable<ID>> extends AbstractInMemoryCrudRepository<T, ID>
+public class InMemoryJpaRepository<T, ID extends Comparable<? super ID>> extends AbstractInMemoryCrudRepository<T, ID>
         implements JpaRepository<T, ID> {
 
     /**

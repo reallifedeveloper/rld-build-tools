@@ -38,7 +38,7 @@ import com.reallifedeveloper.tools.test.TestUtil;
  * @author RealLifeDeveloper
  */
 @SuppressWarnings({ "PMD", "checkstyle:noReturnNull" }) // TODO: Consider refactoring this class using the hints from PMD
-public abstract class AbstractInMemoryCrudRepository<T, ID extends Comparable<ID>>
+public abstract class AbstractInMemoryCrudRepository<T, ID extends Comparable<? super ID>>
         implements CrudRepository<T, ID>, PagingAndSortingRepository<T, ID>, QueryByExampleExecutor<T> {
 
     private final Map<@NonNull ID, @NonNull T> entities = new HashMap<>();
