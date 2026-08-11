@@ -7,6 +7,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -410,6 +411,8 @@ public class CrudRepositoryWriter {
                 return LocalDateTime.parse(s);
             } else if (type == ZonedDateTime.class) {
                 return ZonedDateTime.parse(s);
+            } else if (type == Instant.class) {
+                return Instant.parse(s);
             } else if (type == BigDecimal.class) {
                 return new BigDecimal(s);
             } else if (type == BigInteger.class) {
