@@ -248,7 +248,7 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
     @Entity
     @Getter
     @AllArgsConstructor
-    private static class TestEntityWithFieldAnnotations implements TestEntity {
+    public static class TestEntityWithFieldAnnotations implements TestEntity {
 
         @Id
         private final Integer id;
