@@ -7,7 +7,15 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.DeleteSpecification;
+import org.springframework.data.jpa.domain.PredicateSpecification;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.domain.UpdateSpecification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
 
 import jakarta.persistence.EmbeddedId;
@@ -24,7 +32,9 @@ import jakarta.persistence.IdClass;
  * @author RealLifeDeveloper
  */
 public class InMemoryJpaRepository<T, ID extends Comparable<? super ID>> extends AbstractInMemoryCrudRepository<T, ID>
-        implements JpaRepository<T, ID> {
+        implements JpaRepository<T, ID>, JpaSpecificationExecutor<T> {
+
+    private final PredicateSpecificationEvaluator<T> predicateSpecificationEvaluator = new PredicateSpecificationEvaluator<>();
 
     /**
      * Creates a new {@code InMemoryJpaRepository} with no primary key generator. If an entity with a {@code null} primary key is saved, an
@@ -138,12 +148,71 @@ public class InMemoryJpaRepository<T, ID extends Comparable<? super ID>> extends
 
     @Override
     public <S extends T, R> R findBy(Example<S> example, Function<FetchableFluentQuery<S>, R> queryFunction) {
-        throw new UnsupportedOperationException("Unimplemented method 'findBy'");
+        throw new UnsupportedOperationException("findBy(Example, Function<FetchableFluentQuery>)");
     }
 
     @Override
     public T getReferenceById(ID id) {
-        throw new UnsupportedOperationException("Unimplemented method 'getReferenceById'");
+        throw new UnsupportedOperationException("getReferenceById(ID)");
+    }
+
+    //
+    // JpaSpecificationExecutor methods
+    //
+
+    @Override
+    public long count(Specification<T> spec) {
+        throw new UnsupportedOperationException("count(Specification)");
+    }
+
+    @Override
+    public long count(PredicateSpecification<T> spec) {
+        return predicateSpecificationEvaluator.filter(spec, findAll()).size();
+    }
+
+    @Override
+    public long delete(DeleteSpecification<T> spec) {
+        throw new UnsupportedOperationException("delete(DeleteSpecification)");
+    }
+
+    @Override
+    public boolean exists(Specification<T> spec) {
+        throw new UnsupportedOperationException("exists(Specification)");
+    }
+
+    @Override
+    public List<T> findAll(Specification<T> spec) {
+        throw new UnsupportedOperationException("findAll(Specification)");
+    }
+
+    @Override
+    public Page<T> findAll(Specification<T> spec, Pageable pageable) {
+        throw new UnsupportedOperationException("findAll(Specification, Pageable)");
+    }
+
+    @Override
+    public List<T> findAll(Specification<T> spec, Sort sort) {
+        throw new UnsupportedOperationException("findAll(Specification, Sort)");
+    }
+
+    @Override
+    public Page<T> findAll(Specification<T> spec, Specification<T> countSpec, Pageable pageable) {
+        throw new UnsupportedOperationException("findAll(Specification, Specification, Pageable)");
+    }
+
+    @Override
+    public <S extends T, R> R findBy(Specification<T> spec, Function<? super SpecificationFluentQuery<S>, R> queryFunction) {
+        throw new UnsupportedOperationException("findBy(Specification, Function<SpecificationFluentQuery>)");
+    }
+
+    @Override
+    public Optional<T> findOne(Specification<T> spec) {
+        throw new UnsupportedOperationException("findOne(Specification)");
+    }
+
+    @Override
+    public long update(UpdateSpecification<T> spec) {
+        throw new UnsupportedOperationException("update(UpdateSpecification)");
     }
 
 }

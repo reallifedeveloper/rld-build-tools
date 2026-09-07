@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Example;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,6 +30,8 @@ import lombok.ToString;
 
 @SuppressWarnings({ "unchecked", "NullAway" })
 public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTest {
+
+    private static final Example<TestEntityWithFieldAnnotations> NULL_EXAMPLE = null;
 
     private final InMemoryJpaRepository<TestEntityWithFieldAnnotations, Integer> repository = new InMemoryJpaRepository<>();
 
@@ -240,6 +243,18 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
         assertEquals("foo", localDateRepository.findById(LocalDate.parse("2026-01-01")).get().getName());
         assertEquals("bar", localDateRepository.findById(LocalDate.parse("2026-01-15")).get().getName());
         assertEquals("baz", localDateRepository.findById(LocalDate.parse("2026-01-31")).get().getName());
+    }
+
+    @Test
+    public void findByExampleAndFunctionThrowsUnsupportedOperationException() {
+        Exception e = assertThrows(UnsupportedOperationException.class, () -> repository.findBy(NULL_EXAMPLE, (q) -> null));
+        assertEquals("findBy(Example, Function<FetchableFluentQuery>)", e.getMessage());
+    }
+
+    @Test
+    public void getReferenceByIdThrowsUnsupportedOperationException() {
+        Exception e = assertThrows(UnsupportedOperationException.class, () -> repository.getReferenceById(42));
+        assertEquals("getReferenceById(ID)", e.getMessage());
     }
 
     /**
