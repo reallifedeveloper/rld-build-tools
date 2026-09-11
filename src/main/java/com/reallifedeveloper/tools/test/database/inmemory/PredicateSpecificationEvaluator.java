@@ -1,19 +1,21 @@
 package com.reallifedeveloper.tools.test.database.inmemory;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
@@ -25,6 +27,7 @@ import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.MapJoin;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import lombok.Getter;
@@ -44,6 +47,8 @@ public final class PredicateSpecificationEvaluator<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(PredicateSpecificationEvaluator.class);
 
+    private final Map<String, RegisteredFunction> functions = new HashMap<>();
+
     /**
      * Checks if the given entity matches the given specification.
      *
@@ -53,7 +58,6 @@ public final class PredicateSpecificationEvaluator<T> {
      * @return {@code true} if {@code specification} matches {@code entity}, {@code false} otherwise
      */
     public boolean matches(PredicateSpecification<T> specification, T entity) {
-
         Objects.requireNonNull(specification);
         Objects.requireNonNull(entity);
 
@@ -85,13 +89,106 @@ public final class PredicateSpecificationEvaluator<T> {
      * Filters a collection of entities based on if they match the given specification or not.
      *
      * @param specification the {@code PredicateSpecification} to use
-     * @param entities      the collecction of entities to filter
+     * @param entities      the collection of entities to filter
      *
      * @return a list of the entities from the {@code entities} collection that match {@code specification}
      */
     public List<T> filter(PredicateSpecification<T> specification, Collection<T> entities) {
-
         return entities.stream().filter(entity -> matches(specification, entity)).toList();
+    }
+
+    /**
+     * Registers a function that can be used by {@code CriteriaBuilder.function}.
+     * <p>
+     * An example of registering a function:
+     *
+     * <pre>{@code
+     * evaluator.registerFunction("concat_with_separator", String.class, arguments -> {
+     *     String separator = (String) arguments.get(0);
+     *     String left = (String) arguments.get(1);
+     *     String right = (String) arguments.get(2);
+     *     if (separator == null || left == null || right == null) {
+     *         return null;
+     *     }
+     *     return left + separator + right;
+     * });
+     * }</pre>
+     *
+     * @param name       the name of the function to register
+     * @param resultType the class representing the return type of the function to register
+     * @param function   the function to register
+     * @param <R>        the return type of the function to register
+     *
+     * @return the {@code PredicationSpecificationEvaluator} itself, in order to support nested (fluent) calls
+     */
+    public <R> PredicateSpecificationEvaluator<T> registerFunction(String name, Class<R> resultType, EvaluationFunction function) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(resultType);
+        Objects.requireNonNull(function);
+
+        functions.put(normalizeFunctionName(name), new RegisteredFunction(resultType, function));
+
+        return this;
+    }
+
+    /**
+     * A function that can be registered using the {@link #registerFunction(String, Class, EvaluationFunction)} method.
+     */
+    @FunctionalInterface
+    public interface EvaluationFunction {
+        /**
+         * Applies the function to its arguments.
+         *
+         * @param arguments the list of arguments
+         *
+         * @return the return values of the function
+         */
+        Object apply(List<Object> arguments);
+    }
+
+    /**
+     * Registers a single-parameter function thet can be used by {@code CriteriaBuilder.function}.
+     * <p>
+     * This is a convenience method so that you can register functions with a single parameter like this:
+     *
+     * <pre>{@code
+     * evaluator.registerFunction("lower", String.class, String.class, value -> value == null ? null : value.toLowerCase(Locale.ROOT));
+     * }</pre>
+     *
+     * @param name         the name of the function to register
+     * @param resultType   the class representing the return type of the function to register
+     * @param argumentType the class representing the type of the only function parameter
+     * @param function     the function to register
+     * @param <A>          the type of the only function parameter
+     * @param <R>          the return type of the function to register
+     *
+     * @return the {@code PredicationSpecificationEvaluator} itself, in order to support nested (fluent) calls
+     */
+    public <A, R> PredicateSpecificationEvaluator<T> registerFunction(String name, Class<R> resultType, Class<A> argumentType,
+            Function<A, R> function) {
+        return registerFunction(name, resultType, arguments -> {
+            requireArgumentCount(name, arguments, 1);
+            A argument = castFunctionArgument(name, 0, argumentType, arguments.get(0));
+            return function.apply(argument);
+        });
+    }
+
+    private static void requireArgumentCount(String functionName, List<Object> arguments, int expected) {
+        if (arguments.size() != expected) {
+            throw new IllegalArgumentException(
+                    "Function '%s' expected %d arguments but received %d".formatted(functionName, expected, arguments.size()));
+        }
+    }
+
+    private static <A> @Nullable A castFunctionArgument(String functionName, int index, Class<A> type, @Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (!type.isInstance(value)) {
+            throw new IllegalArgumentException("Argument %d to function '%s' was %s, expected %s".formatted(index, functionName,
+                    value.getClass().getName(), type.getName()));
+        }
+        return type.cast(value);
     }
 
     // ============================================================
@@ -104,7 +201,19 @@ public final class PredicateSpecificationEvaluator<T> {
     private record Constant(@Nullable Object value) implements Expr {
     }
 
-    private record PathExpr(Source source, List<String> attributes) implements Expr {
+    private sealed interface PathExpression extends Expr {
+    }
+
+    private record PathExpr(Source source, List<String> attributes) implements PathExpression {
+    }
+
+    private record AttributePath(Expr parent, String attribute) implements PathExpression {
+    }
+
+    private record MapKeyExpr(Source source) implements PathExpression {
+    }
+
+    private record MapValueExpr(Source source) implements PathExpression {
     }
 
     private record Equal(Expr left, Expr right) implements Expr {
@@ -143,10 +252,29 @@ public final class PredicateSpecificationEvaluator<T> {
     private record Product(Expr left, Expr right) implements Expr {
     }
 
+    private record In(Expr expression, List<Expr> values) implements Expr {
+    }
+
     private record TrueExpr() implements Expr {
     }
 
     private record FalseExpr() implements Expr {
+    }
+
+    private record MapEntryExpr(Source source) implements Expr {
+    }
+
+    private record IsEmpty(Expr expression) implements Expr {
+    }
+
+    private record IsNotEmpty(Expr expression) implements Expr {
+    }
+
+    private record FunctionCall(String name, Class<?> resultType, List<Expr> arguments) implements Expr {
+    }
+
+    private interface ExpressionProvider {
+        Expr expression();
     }
 
     // ============================================================
@@ -162,7 +290,11 @@ public final class PredicateSpecificationEvaluator<T> {
     private record JoinSource(int id) implements Source {
     }
 
-    private record JoinDefinition(int id, Source parent, String attribute, JoinType joinType) {
+    private enum JoinKind {
+        STANDARD, MAP
+    }
+
+    private record JoinDefinition(int id, Source parent, String attribute, JoinType joinType, JoinKind kind) {
     }
 
     @Getter
@@ -170,15 +302,20 @@ public final class PredicateSpecificationEvaluator<T> {
     private static final class RecordingState {
 
         private int nextJoinId;
-
         private final List<JoinDefinition> joins = new ArrayList<>();
 
         JoinSource addJoin(Source parent, String attribute, JoinType joinType) {
+            return addJoin(parent, attribute, joinType, JoinKind.STANDARD);
+        }
 
+        JoinSource addMapJoin(Source parent, String attribute, JoinType joinType) {
+            return addJoin(parent, attribute, joinType, JoinKind.MAP);
+        }
+
+        private JoinSource addJoin(Source parent, String attribute, JoinType joinType, JoinKind kind) {
             int id = nextJoinId++;
 
-            joins.add(new JoinDefinition(id, parent, attribute, joinType));
-
+            joins.add(new JoinDefinition(id, parent, attribute, joinType, kind));
             return new JoinSource(id);
         }
     }
@@ -218,21 +355,14 @@ public final class PredicateSpecificationEvaluator<T> {
 
         for (JoinDefinition join : state.joins) {
             List<EvaluationContext> next = new ArrayList<>();
-
             for (EvaluationContext row : rows) {
-                Object parent = row.source(join.parent());
-
+                Object parent = resolveJoinParent(row, join.parent());
                 Object value = parent == null ? null : PropertyAccess.read(parent, join.attribute());
-
-                List<?> joinedValues = normalizeJoinValue(value);
-
+                List<?> joinedValues = normalizeJoinValue(value, join.kind());
                 if (joinedValues.isEmpty()) {
                     if (join.joinType() == JoinType.LEFT) {
                         next.add(row.bind(join.id(), null));
                     }
-
-                    // INNER JOIN:
-                    // no resulting row.
                     continue;
                 }
 
@@ -240,41 +370,42 @@ public final class PredicateSpecificationEvaluator<T> {
                     next.add(row.bind(join.id(), joinedValue));
                 }
             }
-
             rows = next;
         }
-
         return rows;
     }
 
-    private static List<?> normalizeJoinValue(@Nullable Object value) {
+    private record MapBinding(Object key, Object value) {
+    }
+
+    private static @Nullable Object resolveJoinParent(EvaluationContext context, Source source) {
+
+        Object value = context.source(source);
+
+        if (value instanceof MapBinding mapBinding) {
+            return mapBinding.value();
+        }
+
+        return value;
+    }
+
+    private static List<?> normalizeJoinValue(@Nullable Object value, JoinKind kind) {
 
         if (value == null) {
             return List.of();
         }
 
-        if (value instanceof Collection<?> collection) {
-            return List.copyOf(collection);
-        }
+        if (kind == JoinKind.MAP) {
 
-        if (value instanceof Iterable<?> iterable) {
-            List<Object> result = new ArrayList<>();
-
-            iterable.forEach(result::add);
-
-            return result;
-        }
-
-        if (value.getClass().isArray()) {
-            int length = Array.getLength(value);
-
-            List<Object> result = new ArrayList<>(length);
-
-            for (int i = 0; i < length; i++) {
-                result.add(Array.get(value, i));
+            if (!(value instanceof Map<?, ?> map)) {
+                throw new IllegalArgumentException("Map join requires a Map value, but got " + value.getClass().getName());
             }
 
-            return result;
+            return map.entrySet().stream().map(entry -> new MapBinding(entry.getKey(), entry.getValue())).toList();
+        }
+
+        if (value instanceof Collection<?> collection) {
+            return new ArrayList<>(collection);
         }
 
         return List.of(value);
@@ -320,6 +451,12 @@ public final class PredicateSpecificationEvaluator<T> {
 
         case Not e -> not(evaluateBoolean(e.expression(), context));
 
+        case In e -> evaluateIn(e, context);
+
+        case IsEmpty e -> evaluateIsEmpty(e, context);
+
+        case IsNotEmpty e -> evaluateIsNotEmpty(e, context);
+
         default -> throw new IllegalArgumentException("Not a boolean expression: " + expr);
         };
     }
@@ -334,7 +471,23 @@ public final class PredicateSpecificationEvaluator<T> {
 
         case PathExpr path -> evaluatePath(path, context);
 
+        case AttributePath path -> {
+            Object parent = evaluateValue(path.parent(), context);
+            yield parent == null ? null : PropertyAccess.read(parent, path.attribute());
+        }
+
+        case MapKeyExpr mapKey -> mapBinding(mapKey.source(), context).key();
+
+        case MapValueExpr mapValue -> mapBinding(mapValue.source(), context).value();
+
+        case MapEntryExpr mapEntry -> {
+            MapBinding binding = mapBinding(mapEntry.source(), context);
+            yield new AbstractMap.SimpleImmutableEntry<>(binding.key(), binding.value());
+        }
+
         case Product product -> multiply(evaluateValue(product.left(), context), evaluateValue(product.right(), context));
+
+        case FunctionCall function -> evaluateFunction(function, context);
 
         default -> throw new IllegalArgumentException("Not a value expression: " + expr);
         };
@@ -343,6 +496,10 @@ public final class PredicateSpecificationEvaluator<T> {
     private @Nullable Object evaluatePath(PathExpr path, EvaluationContext context) {
 
         Object current = context.source(path.source());
+
+        if (current instanceof MapBinding mapBinding) {
+            current = mapBinding.value();
+        }
 
         for (String attribute : path.attributes()) {
             if (current == null) {
@@ -353,6 +510,17 @@ public final class PredicateSpecificationEvaluator<T> {
         }
 
         return current;
+    }
+
+    private static MapBinding mapBinding(Source source, EvaluationContext context) {
+
+        Object value = context.source(source);
+
+        if (!(value instanceof MapBinding binding)) {
+            throw new IllegalStateException("Expected map binding for " + source);
+        }
+
+        return binding;
     }
 
     private static Truth equal(@Nullable Object left, @Nullable Object right) {
@@ -418,6 +586,59 @@ public final class PredicateSpecificationEvaluator<T> {
         case FALSE -> Truth.TRUE;
         case UNKNOWN -> Truth.UNKNOWN;
         };
+    }
+
+    private Truth evaluateIn(In in, EvaluationContext context) {
+
+        Object testedValue = evaluateValue(in.expression(), context);
+
+        boolean unknown = false;
+
+        for (Expr valueExpr : in.values()) {
+            Object candidate = evaluateValue(valueExpr, context);
+
+            Truth comparison = equal(testedValue, candidate);
+
+            if (comparison == Truth.TRUE) {
+                return Truth.TRUE;
+            }
+
+            if (comparison == Truth.UNKNOWN) {
+                unknown = true;
+            }
+        }
+
+        return unknown ? Truth.UNKNOWN : Truth.FALSE;
+    }
+
+    private Truth evaluateIsEmpty(IsEmpty expression, EvaluationContext context) {
+        Object value = evaluateValue(expression.expression(), context);
+
+        LOG.trace("===== evaluateIsEmpty: value={}", value);
+
+        if (value == null) {
+            return Truth.UNKNOWN;
+        }
+
+        if (!(value instanceof Collection<?> collection)) {
+            throw new IllegalStateException("isEmpty() requires a Collection, but got " + value.getClass().getName());
+        }
+
+        return collection.isEmpty() ? Truth.TRUE : Truth.FALSE;
+    }
+
+    private Truth evaluateIsNotEmpty(IsNotEmpty expression, EvaluationContext context) {
+        Object value = evaluateValue(expression.expression(), context);
+
+        if (value == null) {
+            return Truth.UNKNOWN;
+        }
+
+        if (!(value instanceof Collection<?> collection)) {
+            throw new IllegalStateException("isNotEmpty() requires a Collection, but got " + value.getClass().getName());
+        }
+
+        return collection.isEmpty() ? Truth.FALSE : Truth.TRUE;
     }
 
     private Truth compare(Expr leftExpr, Expr rightExpr, EvaluationContext context, java.util.function.IntPredicate condition) {
@@ -500,6 +721,8 @@ public final class PredicateSpecificationEvaluator<T> {
 
         static Expr expressionOf(Object value) {
 
+            LOG.trace("expressionOf: value={}", value);
+
             if (value == null) {
                 return new Constant(null);
             }
@@ -508,12 +731,8 @@ public final class PredicateSpecificationEvaluator<T> {
 
                 InvocationHandler handler = Proxy.getInvocationHandler(value);
 
-                if (handler instanceof ExpressionHandler h) {
-                    return h.expression;
-                }
-
-                if (handler instanceof FromHandler h) {
-                    return new PathExpr(h.source, List.of());
+                if (handler instanceof ExpressionProvider provider) {
+                    return provider.expression();
                 }
             }
 
@@ -521,10 +740,10 @@ public final class PredicateSpecificationEvaluator<T> {
         }
 
         @SuppressWarnings("unchecked")
-        static <X> Path<X> path(Expr expr) {
+        static <X> Path<X> path(PathExpression expression) {
 
             return (Path<X>) Proxy.newProxyInstance(Path.class.getClassLoader(), new Class<?>[] { Path.class },
-                    new ExpressionHandler(expr));
+                    new ExpressionHandler(expression));
         }
 
         static Predicate predicate(Expr expr) {
@@ -546,21 +765,39 @@ public final class PredicateSpecificationEvaluator<T> {
             return (Join<X, Y>) Proxy.newProxyInstance(Join.class.getClassLoader(), new Class<?>[] { Join.class },
                     new FromHandler(state, source));
         }
+
+        @SuppressWarnings("unchecked")
+        static <X, K, V> MapJoin<X, K, V> mapJoin(RecordingState state, JoinSource source) {
+
+            return (MapJoin<X, K, V>) Proxy.newProxyInstance(MapJoin.class.getClassLoader(), new Class<?>[] { MapJoin.class },
+                    new MapJoinHandler(state, source));
+        }
+
+        @SuppressWarnings("unchecked")
+        static <T> CriteriaBuilder.In<T> in(Expr expression) {
+
+            return (CriteriaBuilder.In<T>) Proxy.newProxyInstance(CriteriaBuilder.In.class.getClassLoader(),
+                    new Class<?>[] { CriteriaBuilder.In.class }, new InHandler(expression));
+        }
     }
 
     // ============================================================
     // From / Join Proxy
     // ============================================================
 
-    private static final class FromHandler implements InvocationHandler {
+    private static final class FromHandler implements InvocationHandler, ExpressionProvider {
 
         private final RecordingState state;
         private final Source source;
 
         private FromHandler(RecordingState state, Source source) {
-
             this.state = state;
             this.source = source;
+        }
+
+        @Override
+        public Expr expression() {
+            return new PathExpr(source, List.of());
         }
 
         @Override
@@ -568,21 +805,91 @@ public final class PredicateSpecificationEvaluator<T> {
 
             String name = method.getName();
 
-            if (name.equals("get") && args != null && args.length == 1 && args[0] instanceof String attribute) {
-
-                return Proxies.path(new PathExpr(source, List.of(attribute)));
+            if (isGet(method, args)) {
+                return navigatePath(expression(), (String) args[0]);
             }
 
             if (name.equals("join") && args != null && args.length >= 1 && args[0] instanceof String attribute) {
-
                 JoinType joinType = args.length >= 2 && args[1] instanceof JoinType jt ? jt : JoinType.INNER;
-
                 JoinSource join = state.addJoin(source, attribute, joinType);
-
                 return Proxies.join(state, join);
             }
 
+            if (method.getName().equals("joinMap") && args != null && args.length >= 1 && args[0] instanceof String attribute) {
+                JoinType joinType = args.length >= 2 && args[1] instanceof JoinType jt ? jt : JoinType.INNER;
+                JoinSource join = state.addMapJoin(source, attribute, joinType);
+                return Proxies.mapJoin(state, join);
+            }
+
             return objectMethodOrUnsupported(proxy, method, args, "From[" + source + "]");
+        }
+    }
+
+    private static boolean isGet(Method method, Object[] args) {
+        return method.getName().equals("get") && args != null && args.length == 1 && args[0] instanceof String;
+    }
+
+    private static Object navigatePath(Expr parent, String attribute) {
+        return Proxies.path(new AttributePath(parent, attribute));
+    }
+
+    // ============================================================
+    // MapJoin Proxy
+    // ============================================================
+
+    private static final class MapJoinHandler implements InvocationHandler, ExpressionProvider {
+
+        private final RecordingState state;
+        private final JoinSource source;
+
+        private MapJoinHandler(RecordingState state, JoinSource source) {
+            this.state = state;
+            this.source = source;
+        }
+
+        @Override
+        public Expr expression() {
+            return new PathExpr(source, List.of());
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) {
+
+            LOG.trace("===== MapJoinHandler.invoke: method={}, args={}", method, args == null ? "null" : Arrays.toString(args));
+            String name = method.getName();
+
+            if (isGet(method, args)) {
+                return navigatePath(expression(), (String) args[0]);
+            }
+
+            if (name.equals("key") && method.getParameterCount() == 0) {
+                return Proxies.path(new MapKeyExpr(source));
+            }
+
+            if (name.equals("value") && method.getParameterCount() == 0) {
+                return Proxies.path(new MapValueExpr(source));
+            }
+
+            if (name.equals("entry") && method.getParameterCount() == 0) {
+                return Proxies.expression(new MapEntryExpr(source));
+            }
+
+            /*
+             * A MapJoin is also a From, so allow nested joins against the map value.
+             */
+            if (name.equals("join") && args != null && args.length >= 1 && args[0] instanceof String attribute) {
+                JoinType joinType = args.length >= 2 && args[1] instanceof JoinType jt ? jt : JoinType.INNER;
+                JoinSource join = state.addJoin(source, attribute, joinType);
+                return Proxies.join(state, join);
+            }
+
+            if (name.equals("joinMap") && args != null && args.length >= 1 && args[0] instanceof String attribute) {
+                JoinType joinType = args.length >= 2 && args[1] instanceof JoinType jt ? jt : JoinType.INNER;
+                JoinSource join = state.addMapJoin(source, attribute, joinType);
+                return Proxies.mapJoin(state, join);
+            }
+
+            return objectMethodOrUnsupported(proxy, method, args, "MapJoin[" + source + "]");
         }
     }
 
@@ -590,34 +897,77 @@ public final class PredicateSpecificationEvaluator<T> {
     // Path / Expression / Predicate Proxy
     // ============================================================
 
-    private static final class ExpressionHandler implements InvocationHandler {
+    private static final class ExpressionHandler implements InvocationHandler, ExpressionProvider {
 
         private final Expr expression;
 
         private ExpressionHandler(Expr expression) {
+            LOG.trace("ExpressionHandler: expression={}", expression);
             this.expression = expression;
+        }
+
+        @Override
+        public Expr expression() {
+            return expression;
         }
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) {
 
-            if (method.getName().equals("get") && args != null && args.length == 1 && args[0] instanceof String attribute
-                    && expression instanceof PathExpr path) {
-
-                List<String> attributes = new ArrayList<>(path.attributes());
-
-                attributes.add(attribute);
-
-                return Proxies.path(new PathExpr(path.source(), List.copyOf(attributes)));
+            /*
+             * Path.get("attribute")
+             */
+            if (isGet(method, args)) {
+                return navigatePath(expression, (String) args[0]);
             }
 
-            if (method.getName().equals("not") && proxy instanceof Predicate) {
+            /*
+             * Expression.in(...)
+             *
+             * Handles:
+             *
+             * path.in("A", "B") path.in(List.of("A", "B")) path.in(expr1, expr2)
+             */
+            if (method.getName().equals("in")) {
+                return handleIn(expression, method, args);
+            }
 
+            /*
+             * Predicate.not()
+             *
+             * Note that cb.not(predicate) is handled by CriteriaBuilderHandler instead.
+             */
+            if (method.getName().equals("not") && method.getParameterCount() == 0 && proxy instanceof Predicate) {
                 return Proxies.predicate(new Not(expression));
             }
 
             return objectMethodOrUnsupported(proxy, method, args, expression.toString());
         }
+    }
+
+    private static Object handleIn(Expr expression, Method method, Object[] args) {
+
+        LOG.trace("handleIn: expression={}, method={}, args={}", expression, method, Arrays.asList(args));
+
+        if (args == null || args.length != 1) {
+            throw new UnsupportedOperationException("Unsupported Expression.in() overload: " + method);
+        }
+
+        Object argument = args[0];
+
+        List<Expr> values;
+
+        if (argument instanceof Collection<?> collection) {
+            values = collection.stream().map(Proxies::expressionOf).toList();
+
+        } else if (argument instanceof Object[] array) {
+            values = Arrays.stream(array).map(Proxies::expressionOf).toList();
+
+        } else {
+            values = List.of(Proxies.expressionOf(argument));
+        }
+
+        return Proxies.predicate(new In(expression, values));
     }
 
     // ============================================================
@@ -670,6 +1020,14 @@ public final class PredicateSpecificationEvaluator<T> {
 
             case "prod" -> Proxies.expression(new Product(expr(args[0]), expr(args[1])));
 
+            case "in" -> Proxies.in(expr(args[0]));
+
+            case "isEmpty" -> Proxies.predicate(new IsEmpty(expr(args[0])));
+
+            case "isNotEmpty" -> Proxies.predicate(new IsNotEmpty(expr(args[0])));
+
+            case "function" -> handleFunction(args);
+
             default -> objectMethodOrUnsupported(proxy, method, args, "CriteriaBuilder");
             };
         }
@@ -699,6 +1057,44 @@ public final class PredicateSpecificationEvaluator<T> {
     }
 
     // ============================================================
+    // CriteriaBuilder.In Proxy
+    // ============================================================
+
+    private static final class InHandler implements InvocationHandler, ExpressionProvider {
+
+        private final Expr expression;
+
+        private final List<Expr> values = new ArrayList<>();
+
+        private InHandler(Expr expression) {
+            this.expression = expression;
+        }
+
+        @Override
+        public Expr expression() {
+            return new In(expression, List.copyOf(values));
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) {
+
+            if (method.getName().equals("value") && args != null && args.length == 1) {
+
+                values.add(Proxies.expressionOf(args[0]));
+
+                // CriteriaBuilder.In.value() returns itself.
+                return proxy;
+            }
+
+            if (method.getName().equals("not")) {
+                return Proxies.predicate(new Not(expression()));
+            }
+
+            return objectMethodOrUnsupported(proxy, method, args, expression().toString());
+        }
+    }
+
+    // ============================================================
     // Bean / Property Access
     // ============================================================
 
@@ -707,6 +1103,8 @@ public final class PredicateSpecificationEvaluator<T> {
         private static final Map<Key, Accessor> CACHE = new ConcurrentHashMap<>();
 
         static @Nullable Object read(@Nullable Object target, String property) {
+
+            LOG.trace("PropertyAccess.read: target={}, property={}", target, property);
 
             if (target == null) {
                 return null;
@@ -801,7 +1199,103 @@ public final class PredicateSpecificationEvaluator<T> {
     }
 
     // ============================================================
-    // Proxy Utility
+    // Function Support
+    // ============================================================
+
+    private record RegisteredFunction(Class<?> resultType, EvaluationFunction function) {
+    }
+
+    private static String normalizeFunctionName(String name) {
+        return name.toLowerCase(Locale.ROOT);
+    }
+
+    private static Object handleFunction(Object[] args) {
+        if (args == null || args.length != 3 || !(args[0] instanceof String name) || !(args[1] instanceof Class<?> resultType)
+                || !(args[2] instanceof Object[] functionArguments)) {
+            throw new UnsupportedOperationException("Unsupported CriteriaBuilder.function() invocation");
+        }
+
+        List<Expr> arguments = Arrays.stream(functionArguments).map(Proxies::expressionOf).toList();
+
+        return Proxies.expression(new FunctionCall(name, resultType, arguments));
+    }
+
+    private Object evaluateFunction(FunctionCall functionCall, EvaluationContext context) {
+        RegisteredFunction registered = functions.get(normalizeFunctionName(functionCall.name()));
+
+        if (registered == null) {
+            throw new UnsupportedOperationException("No evaluator function registered for CriteriaBuilder.function(" + functionCall.name()
+                    + ", " + functionCall.resultType().getName() + ")");
+        }
+
+        verifyCompatibleResultType(functionCall, registered);
+
+        List<Object> arguments = functionCall.arguments().stream().map(argument -> evaluateValue(argument, context)).toList();
+
+        Object result = registered.function().apply(arguments);
+
+        verifyFunctionResult(functionCall, result);
+
+        return result;
+    }
+
+    private static void verifyCompatibleResultType(FunctionCall call, RegisteredFunction registered) {
+        if (!wrap(call.resultType()).isAssignableFrom(wrap(registered.resultType()))) {
+
+            throw new IllegalStateException("Function '%s' was requested with result type %s, but is registered with result type %s"
+                    .formatted(call.name(), call.resultType().getName(), registered.resultType().getName()));
+        }
+    }
+
+    private static void verifyFunctionResult(FunctionCall call, Object result) {
+        if (result == null) {
+            return;
+        }
+
+        Class<?> expected = wrap(call.resultType());
+
+        if (!expected.isInstance(result)) {
+            throw new IllegalStateException("Function '%s' returned %s, but CriteriaBuilder.function() declared %s".formatted(call.name(),
+                    result.getClass().getName(), expected.getName()));
+        }
+    }
+
+    private static Class<?> wrap(Class<?> type) {
+        if (!type.isPrimitive()) {
+            return type;
+        }
+        if (type == int.class) {
+            return Integer.class;
+        }
+        if (type == long.class) {
+            return Long.class;
+        }
+        if (type == double.class) {
+            return Double.class;
+        }
+        if (type == float.class) {
+            return Float.class;
+        }
+        if (type == short.class) {
+            return Short.class;
+        }
+        if (type == byte.class) {
+            return Byte.class;
+        }
+        if (type == boolean.class) {
+            return Boolean.class;
+        }
+        if (type == char.class) {
+            return Character.class;
+        }
+        if (type == void.class) {
+            return Void.class;
+        }
+        throw new IllegalArgumentException("Unknown primitive type: " + type);
+    }
+
+    // ============================================================
+    // Proxy Utility for Unimplemented Methods
     // ============================================================
 
     private static Object objectMethodOrUnsupported(Object proxy, Method method, Object[] args, String description) {
