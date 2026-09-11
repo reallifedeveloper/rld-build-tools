@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -52,6 +53,16 @@ public class InMemoryJpaRepository<T, ID extends Comparable<? super ID>> extends
      */
     public InMemoryJpaRepository(PrimaryKeyGenerator<ID> primaryKeyGenerator) {
         super(primaryKeyGenerator);
+    }
+
+    /**
+     * Gives the {@link PredicateSpecificationEvaluator} used by this repository. This is useful for registering functions used by
+     * {@code PredicateSpecifications}, and could occasionally be useful to directly check if a predicate specification matches an entity.
+     *
+     * @return the {@code PredicateSpecificationEvaluator} used by this repository.
+     */
+    public PredicateSpecificationEvaluator<T> predicateSpecificationEvaluator() {
+        return predicateSpecificationEvaluator;
     }
 
     /**
@@ -148,7 +159,7 @@ public class InMemoryJpaRepository<T, ID extends Comparable<? super ID>> extends
 
     @Override
     public <S extends T, R> R findBy(Example<S> example, Function<FetchableFluentQuery<S>, R> queryFunction) {
-        throw new UnsupportedOperationException("findBy(Example, Function<FetchableFluentQuery>)");
+        throw new UnsupportedOperationException("findBy(Example, Function<FetchableFluentQuery, R>)");
     }
 
     @Override
@@ -161,18 +172,52 @@ public class InMemoryJpaRepository<T, ID extends Comparable<? super ID>> extends
     //
 
     @Override
-    public long count(Specification<T> spec) {
-        throw new UnsupportedOperationException("count(Specification)");
+    public long count(PredicateSpecification<T> spec) {
+        return findAll(spec).size();
     }
 
     @Override
-    public long count(PredicateSpecification<T> spec) {
-        return predicateSpecificationEvaluator.filter(spec, findAll()).size();
+    public long delete(PredicateSpecification<T> spec) {
+        List<T> toDelete = findAll(spec);
+        deleteAll(toDelete);
+        return toDelete.size();
+    }
+
+    @Override
+    public boolean exists(PredicateSpecification<T> spec) {
+        return !findAll(spec).isEmpty();
+    }
+
+    @Override
+    public List<T> findAll(PredicateSpecification<T> spec) {
+        return predicateSpecificationEvaluator.filter(spec, findAll());
+    }
+
+    @Override
+    public <S extends T, R> R findBy(PredicateSpecification<T> spec, Function<? super SpecificationFluentQuery<S>, R> queryFunction) {
+        throw new UnsupportedOperationException("findBy(PredicateSpecification, Function<SpecificationFluentQuery, R>)");
+    }
+
+    @Override
+    public Optional<T> findOne(PredicateSpecification<T> spec) {
+        List<T> found = findAll(spec);
+        if (found.isEmpty()) {
+            return Optional.empty();
+        } else if (found.size() == 1) {
+            return Optional.of(found.getFirst());
+        } else {
+            throw new IncorrectResultSizeDataAccessException(1, found.size());
+        }
     }
 
     @Override
     public long delete(DeleteSpecification<T> spec) {
         throw new UnsupportedOperationException("delete(DeleteSpecification)");
+    }
+
+    @Override
+    public long count(Specification<T> spec) {
+        throw new UnsupportedOperationException("count(Specification)");
     }
 
     @Override
@@ -202,7 +247,7 @@ public class InMemoryJpaRepository<T, ID extends Comparable<? super ID>> extends
 
     @Override
     public <S extends T, R> R findBy(Specification<T> spec, Function<? super SpecificationFluentQuery<S>, R> queryFunction) {
-        throw new UnsupportedOperationException("findBy(Specification, Function<SpecificationFluentQuery>)");
+        throw new UnsupportedOperationException("findBy(Specification, Function<SpecificationFluentQuery, R>)");
     }
 
     @Override

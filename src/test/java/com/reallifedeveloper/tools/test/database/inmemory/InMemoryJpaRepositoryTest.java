@@ -248,7 +248,7 @@ public class InMemoryJpaRepositoryTest extends AbstractInMemoryCrudRepositoryTes
     @Test
     public void findByExampleAndFunctionThrowsUnsupportedOperationException() {
         Exception e = assertThrows(UnsupportedOperationException.class, () -> repository.findBy(NULL_EXAMPLE, (q) -> null));
-        assertEquals("findBy(Example, Function<FetchableFluentQuery>)", e.getMessage());
+        assertEquals("findBy(Example, Function<FetchableFluentQuery, R>)", e.getMessage());
     }
 
     @Test

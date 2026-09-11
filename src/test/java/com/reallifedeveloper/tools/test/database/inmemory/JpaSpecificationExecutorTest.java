@@ -1,10 +1,16 @@
 package com.reallifedeveloper.tools.test.database.inmemory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.DeleteSpecification;
@@ -42,8 +48,57 @@ public class JpaSpecificationExecutorTest {
     }
 
     @Test
+    public void predicateSpecificationEvaluatorIsNotNull() {
+        assertNotNull(repository.predicateSpecificationEvaluator());
+    }
+
+    @Test
     public void count() {
         assertEquals(2, repository.count(UserSpecifications.lastNameIs("Doe")));
+    }
+
+    @Test
+    public void delete() {
+        repository.delete(UserSpecifications.active());
+        assertEquals(3, repository.count());
+        assertTrue(repository.findAll().stream().allMatch(u -> u.getStatus() == Status.INACTIVE));
+    }
+
+    @Test
+    public void exists() {
+        assertTrue(repository.exists(UserSpecifications.olderThan(40)));
+        assertFalse(repository.exists(UserSpecifications.olderThan(50)));
+    }
+
+    @Test
+    public void findAll() {
+        List<User> activeUsers = repository.findAll(UserSpecifications.active());
+        assertEquals(4, activeUsers.size());
+        assertTrue(activeUsers.stream().allMatch(u -> u.getStatus() == Status.ACTIVE));
+    }
+
+    @Test
+    @SuppressWarnings("NullAway")
+    public void findBy() {
+        Exception e = assertThrows(UnsupportedOperationException.class, () -> repository.findBy(UserSpecifications.active(), null));
+        assertEquals("findBy(PredicateSpecification, Function<SpecificationFluentQuery, R>)", e.getMessage());
+    }
+
+    @Test
+    public void findOne() {
+        assertEquals("Charlie", repository.findOne(UserSpecifications.olderThan(48)).get().getFirstName());
+    }
+
+    @Test
+    public void findOneReturnsEmptyOptionalIfNothingFound() {
+        assertTrue(repository.findOne(UserSpecifications.olderThan(50)).isEmpty());
+    }
+
+    @Test
+    public void findOneThrowsIncorrectResultSizeDataAccessExceptionIfMoreThanOneFound() {
+        IncorrectResultSizeDataAccessException e = assertThrows(IncorrectResultSizeDataAccessException.class,
+                () -> repository.findOne(UserSpecifications.olderThan(30)));
+        assertEquals("Incorrect result size: expected 1, actual 3", e.getMessage());
     }
 
     public static enum Status {
@@ -127,7 +182,7 @@ public class JpaSpecificationExecutorTest {
     @Test
     public void finaAllWithSpecificationAndSpecificationFluentQueryThrowsUnsupportedOperationException() {
         Exception e = assertThrows(UnsupportedOperationException.class, () -> repository.findBy(UNRESTRICTED, (q) -> null));
-        assertEquals("findBy(Specification, Function<SpecificationFluentQuery>)", e.getMessage());
+        assertEquals("findBy(Specification, Function<SpecificationFluentQuery, R>)", e.getMessage());
     }
 
     @Test
