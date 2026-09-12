@@ -19,6 +19,7 @@
 
     <properties>
         <rld-build-tools.version>${project.version}</rld-build-tools.version>
+        <minimum.code-coverage>0.80</minimum.code-coverage>
     </properties>
 
     <dependencies>
