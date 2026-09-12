@@ -3,6 +3,7 @@ package com.reallifedeveloper.tools.test.database.inmemory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -83,7 +84,7 @@ public class PredicateSpecificationEvaluatorTest {
     @Test
     void bothConditionsMustMatchTheSameJoinedRow() {
         Order order = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
-        order.addOrderLine(new OrderLine(1l, order, PRODUCT_BOOK, 1, new BigDecimal("10")));
+        order.addOrderLine(new OrderLine(1L, order, PRODUCT_BOOK, 1, new BigDecimal("10")));
         order.addOrderLine(new OrderLine(2L, order, PRODUCT_TV, 1, new BigDecimal(500)));
         sanityCheck(order);
 
@@ -96,7 +97,7 @@ public class PredicateSpecificationEvaluatorTest {
     @Test
     void matchesWhenOneJoinedRowSatisfiesBothConditions() {
         Order order = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
-        order.addOrderLine(new OrderLine(1l, order, PRODUCT_BOOK, 15, new BigDecimal(10)));
+        order.addOrderLine(new OrderLine(1L, order, PRODUCT_BOOK, 15, new BigDecimal(10)));
         order.addOrderLine(new OrderLine(2L, order, PRODUCT_TV, 1, new BigDecimal(500)));
         sanityCheck(order);
 
@@ -109,7 +110,7 @@ public class PredicateSpecificationEvaluatorTest {
     @Test
     void separateJoinsAreIndependent() {
         Order order = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
-        order.addOrderLine(new OrderLine(1l, order, PRODUCT_BOOK, 1, new BigDecimal("10")));
+        order.addOrderLine(new OrderLine(1L, order, PRODUCT_BOOK, 1, new BigDecimal("10")));
         order.addOrderLine(new OrderLine(2L, order, PRODUCT_TV, 1, new BigDecimal(500)));
         sanityCheck(order);
 
@@ -150,7 +151,7 @@ public class PredicateSpecificationEvaluatorTest {
     @Test
     void filterWithAndWithoutNot() {
         Order order1 = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
-        order1.addOrderLine(new OrderLine(1l, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
+        order1.addOrderLine(new OrderLine(1L, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
         Order order2 = new Order(2L, OrderStatus.NEW, Instant.now(CLOCK), CUSTOMER_2);
         order2.addOrderLine(new OrderLine(2L, order2, PRODUCT_TV, 1, new BigDecimal(500)));
         sanityCheck(order1, order2);
@@ -171,7 +172,7 @@ public class PredicateSpecificationEvaluatorTest {
     @Test
     public void trueAndFalseAndNotMatchAsExpected() {
         Order order = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
-        order.addOrderLine(new OrderLine(1l, order, PRODUCT_BOOK, 1, new BigDecimal("10")));
+        order.addOrderLine(new OrderLine(1L, order, PRODUCT_BOOK, 1, new BigDecimal("10")));
         order.addOrderLine(new OrderLine(2L, order, PRODUCT_TV, 1, new BigDecimal(500)));
         sanityCheck(order);
 
@@ -188,7 +189,7 @@ public class PredicateSpecificationEvaluatorTest {
     @Test
     public void comparisonsMatchAsExpected() {
         PredicateSpecificationEvaluator<OrderLine> lineEvaluator = new PredicateSpecificationEvaluator<>();
-        OrderLine orderLine = new OrderLine(1l, null, PRODUCT_BOOK, 15, new BigDecimal("10"));
+        OrderLine orderLine = new OrderLine(1L, null, PRODUCT_BOOK, 15, new BigDecimal("10"));
 
         assertFalse(lineEvaluator.matches(OrderSpecifications.lineAmountIsLessThan(new BigDecimal("149")), orderLine));
         assertFalse(lineEvaluator.matches(OrderSpecifications.lineAmountIsLessThan(new BigDecimal("150")), orderLine));
@@ -255,7 +256,7 @@ public class PredicateSpecificationEvaluatorTest {
     @Test
     void evaluatesMapJoinKey() {
         Order order1 = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
-        order1.addOrderLine(new OrderLine(1l, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
+        order1.addOrderLine(new OrderLine(1L, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
         Order order2 = new Order(2L, OrderStatus.NEW, Instant.now(CLOCK), CUSTOMER_2);
         order2.addOrderLine(new OrderLine(2L, order2, PRODUCT_TV, 1, new BigDecimal(500)));
         sanityCheck(order1, order2);
@@ -272,7 +273,7 @@ public class PredicateSpecificationEvaluatorTest {
     @Test
     void evaluatesMapJoinValue() {
         Order order1 = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
-        order1.addOrderLine(new OrderLine(1l, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
+        order1.addOrderLine(new OrderLine(1L, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
         Order order2 = new Order(2L, OrderStatus.NEW, Instant.now(CLOCK), CUSTOMER_2);
         order2.addOrderLine(new OrderLine(2L, order2, PRODUCT_TV, 1, new BigDecimal(500)));
         sanityCheck(order1, order2);
@@ -289,7 +290,7 @@ public class PredicateSpecificationEvaluatorTest {
     @Test
     public void mapJoinCanBeJoined() {
         Order order1 = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
-        order1.addOrderLine(new OrderLine(1l, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
+        order1.addOrderLine(new OrderLine(1L, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
         Order order2 = new Order(2L, OrderStatus.NEW, Instant.now(CLOCK), CUSTOMER_2);
         order2.addOrderLine(new OrderLine(2L, order2, PRODUCT_TV, 1, new BigDecimal(500)));
         sanityCheck(order1, order2);
@@ -321,15 +322,15 @@ public class PredicateSpecificationEvaluatorTest {
         PredicateSpecification<OrderLine> spec = OrderSpecifications.lineAmountIsLessThan(new BigDecimal("150"))
                 .or(OrderSpecifications.lineAmountIsGreaterThan(new BigDecimal("150")));
 
-        assertTrue(lineEvaluator.matches(spec, new OrderLine(1l, null, PRODUCT_BOOK, 1, new BigDecimal("149"))));
-        assertFalse(lineEvaluator.matches(spec, new OrderLine(1l, null, PRODUCT_BOOK, 1, new BigDecimal("150"))));
-        assertTrue(lineEvaluator.matches(spec, new OrderLine(1l, null, PRODUCT_BOOK, 1, new BigDecimal("151"))));
+        assertTrue(lineEvaluator.matches(spec, new OrderLine(1L, null, PRODUCT_BOOK, 1, new BigDecimal("149"))));
+        assertFalse(lineEvaluator.matches(spec, new OrderLine(1L, null, PRODUCT_BOOK, 1, new BigDecimal("150"))));
+        assertTrue(lineEvaluator.matches(spec, new OrderLine(1L, null, PRODUCT_BOOK, 1, new BigDecimal("151"))));
     }
 
     @Test
     public void nullChecksMatchAsExpected() {
         PredicateSpecificationEvaluator<OrderLine> lineEvaluator = new PredicateSpecificationEvaluator<>();
-        OrderLine orderLine1 = new OrderLine(1l, null, PRODUCT_BOOK, 15, new BigDecimal("10"));
+        OrderLine orderLine1 = new OrderLine(1L, null, PRODUCT_BOOK, 15, new BigDecimal("10"));
         OrderLine orderLine2 = new OrderLine(null, null, PRODUCT_TV, 1, new BigDecimal(500));
 
         PredicateSpecification<OrderLine> idIsNull = (line, cb) -> cb.isNull(line.get("id"));
@@ -345,7 +346,7 @@ public class PredicateSpecificationEvaluatorTest {
     @Test
     public void equalityChecksMatchAsExpected() {
         PredicateSpecificationEvaluator<OrderLine> lineEvaluator = new PredicateSpecificationEvaluator<>();
-        OrderLine orderLine1 = new OrderLine(1l, null, PRODUCT_BOOK, 15, new BigDecimal("10"));
+        OrderLine orderLine1 = new OrderLine(1L, null, PRODUCT_BOOK, 15, new BigDecimal("10"));
         OrderLine orderLine2 = new OrderLine(2L, null, PRODUCT_TV, 1, new BigDecimal(500));
 
         PredicateSpecification<OrderLine> isIsOne = (line, cb) -> cb.equal(line.get("id"), 1L);
@@ -368,7 +369,7 @@ public class PredicateSpecificationEvaluatorTest {
     @Test
     public void isEmptyMatchesAsExpected() {
         Order order1 = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
-        order1.addOrderLine(new OrderLine(1l, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
+        order1.addOrderLine(new OrderLine(1L, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
         Order order2 = new Order(2L, OrderStatus.NEW, Instant.now(CLOCK), CUSTOMER_2);
 
         PredicateSpecification<Order> noLines = (o, cb) -> cb.isEmpty(o.get("lines"));
@@ -400,7 +401,7 @@ public class PredicateSpecificationEvaluatorTest {
     @Test
     public void isNotEmptyMatchesAsExpected() {
         Order order1 = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
-        order1.addOrderLine(new OrderLine(1l, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
+        order1.addOrderLine(new OrderLine(1L, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
         Order order2 = new Order(2L, OrderStatus.NEW, Instant.now(CLOCK), CUSTOMER_2);
 
         PredicateSpecification<Order> hasLines = (o, cb) -> cb.isNotEmpty(o.get("lines"));
@@ -586,12 +587,13 @@ public class PredicateSpecificationEvaluatorTest {
     }
 
     @Test
-    public void foo() {
+    public void pathImplementsObjectMethods() {
         PredicateSpecificationEvaluator<Customer> customerEvaluator = new PredicateSpecificationEvaluator<>();
         PredicateSpecification<Customer> spec = (c, cb) -> {
-            System.out.println("===== " + c.get("name").toString());
-            System.out.println("===== " + c.get("name").hashCode());
-            // System.out.println("===== " + c.get("name").equals(c.get("name")));
+            assertNotNull(c.get("name").toString());
+            assertNotNull(c.get("name").hashCode());
+            // TODO: The next line causes a loop and stack overflow.
+            // c.get("name").equals(cb.literal("foo"));
             return cb.conjunction();
         };
         assertTrue(customerEvaluator.matches(spec, CUSTOMER_1));
@@ -607,7 +609,12 @@ public class PredicateSpecificationEvaluatorTest {
         public static class Order {
 
             public enum OrderStatus {
-                NEW, PAID, SHIPPED
+                /** Order is new. */
+                NEW,
+                /** Order has been paid. */
+                PAID,
+                /** Order has been shipped. */
+                SHIPPED
             }
 
             @Id

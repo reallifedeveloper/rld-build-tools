@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.PredicateSpecification;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.From;
@@ -46,6 +47,8 @@ import lombok.experimental.Accessors;
  *
  * @author ChatGPT, RealLifeDeveloper
  */
+@SuppressWarnings({ "InnerTypeLast", "PMD" })
+@SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "This code is only intended for testing")
 public final class PredicateSpecificationEvaluator<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(PredicateSpecificationEvaluator.class);
@@ -67,7 +70,7 @@ public final class PredicateSpecificationEvaluator<T> {
         RecordingState state = new RecordingState();
 
         From<?, T> root = Proxies.root(state);
-        CriteriaBuilder cb = Proxies.criteriaBuilder(state);
+        CriteriaBuilder cb = Proxies.criteriaBuilder();
 
         Predicate predicate = specification.toPredicate(root, cb);
 
@@ -479,6 +482,7 @@ public final class PredicateSpecificationEvaluator<T> {
         };
     }
 
+    @SuppressWarnings("noReturnNull")
     private @Nullable Object evaluatePath(PathExpr path, EvaluationContext context) {
 
         Object current = context.source(path.source());
@@ -657,6 +661,7 @@ public final class PredicateSpecificationEvaluator<T> {
         throw new IllegalArgumentException("Cannot compare " + left.getClass().getName() + " and " + right.getClass().getName());
     }
 
+    @SuppressWarnings("noReturnNull")
     private static @Nullable Object multiply(@Nullable Object left, @Nullable Object right) {
 
         LOG.trace("multiply: left={}, right={}", left, right);
@@ -697,10 +702,10 @@ public final class PredicateSpecificationEvaluator<T> {
                     new FromHandler(state, new RootSource()));
         }
 
-        static CriteriaBuilder criteriaBuilder(RecordingState state) {
+        static CriteriaBuilder criteriaBuilder() {
 
             return (CriteriaBuilder) Proxy.newProxyInstance(CriteriaBuilder.class.getClassLoader(),
-                    new Class<?>[] { CriteriaBuilder.class }, new CriteriaBuilderHandler(state));
+                    new Class<?>[] { CriteriaBuilder.class }, new CriteriaBuilderHandler());
         }
 
         static Expr expressionOf(Object value) {
@@ -930,11 +935,11 @@ public final class PredicateSpecificationEvaluator<T> {
 
     private static Object handleIn(Expr expression, Method method, Object[] args) {
 
-        LOG.trace("handleIn: expression={}, method={}, args={}", expression, method, Arrays.asList(args));
-
         if (args == null || args.length != 1) {
             throw new UnsupportedOperationException("Unsupported Expression.in() overload: " + method);
         }
+
+        LOG.trace("handleIn: expression={}, method={}, args={}", expression, method, Arrays.asList(args));
 
         Object argument = args[0];
 
@@ -958,13 +963,6 @@ public final class PredicateSpecificationEvaluator<T> {
     // ============================================================
 
     private static final class CriteriaBuilderHandler implements InvocationHandler {
-
-        @SuppressWarnings("unused")
-        private final RecordingState state;
-
-        private CriteriaBuilderHandler(RecordingState state) {
-            this.state = state;
-        }
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) {
@@ -1085,6 +1083,7 @@ public final class PredicateSpecificationEvaluator<T> {
 
         private static final Map<Key, Accessor> CACHE = new ConcurrentHashMap<>();
 
+        @SuppressWarnings("noReturnNull")
         static @Nullable Object read(@Nullable Object target, String property) {
 
             LOG.trace("PropertyAccess.read: target={}, property={}", target, property);
@@ -1192,6 +1191,7 @@ public final class PredicateSpecificationEvaluator<T> {
         return name.toLowerCase(Locale.ROOT);
     }
 
+    @SuppressWarnings("MagicNumber")
     private static Object handleFunction(Object[] args) {
         if (args == null || args.length != 3 || !(args[0] instanceof String name) || !(args[1] instanceof Class<?> resultType)
                 || !(args[2] instanceof Object[] functionArguments)) {
@@ -1252,8 +1252,8 @@ public final class PredicateSpecificationEvaluator<T> {
         Class<?> expected = wrap(call.resultType());
 
         if (!expected.isInstance(result)) {
-            throw new IllegalArgumentException("Function '%s' returned %s, but CriteriaBuilder.function() declared %s".formatted(call.name(),
-                    result.getClass().getName(), expected.getName()));
+            throw new IllegalArgumentException("Function '%s' returned %s, but CriteriaBuilder.function() declared %s"
+                    .formatted(call.name(), result.getClass().getName(), expected.getName()));
         }
     }
 

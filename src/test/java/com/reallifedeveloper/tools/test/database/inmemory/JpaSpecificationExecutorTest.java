@@ -101,42 +101,6 @@ public class JpaSpecificationExecutorTest {
         assertEquals("Incorrect result size: expected 1, actual 3", e.getMessage());
     }
 
-    public static enum Status {
-        ACTIVE, INACTIVE
-    }
-
-    @Entity
-    @Getter
-    @AllArgsConstructor
-    @ToString
-    public static class User {
-        @Id
-        @GeneratedValue(strategy = GenerationType.AUTO)
-        private Long id;
-
-        private String firstName;
-        private String lastName;
-        private String email;
-
-        private int age;
-
-        private Status status;
-    }
-
-    public static class UserSpecifications {
-        public static PredicateSpecification<User> active() {
-            return (from, cb) -> cb.equal(from.get("status"), Status.ACTIVE);
-        }
-
-        public static PredicateSpecification<User> lastNameIs(String lastName) {
-            return (from, cb) -> cb.equal(from.get("lastName"), lastName);
-        }
-
-        public static PredicateSpecification<User> olderThan(int age) {
-            return (from, cb) -> cb.greaterThan(from.get("age"), age);
-        }
-    }
-
     @Test
     public void countWithSpecificationThrowsUnsupportedOperationException() {
         Exception e = assertThrows(UnsupportedOperationException.class, () -> repository.count(UNRESTRICTED));
@@ -195,5 +159,48 @@ public class JpaSpecificationExecutorTest {
     public void updateWithUpdateSpecificationThrowsUnsupportedOperationException() {
         Exception e = assertThrows(UnsupportedOperationException.class, () -> repository.update(UNRESTRICTED_UPDATE));
         assertEquals("update(UpdateSpecification)", e.getMessage());
+    }
+
+    //
+    // Entity model
+    //
+
+    public enum Status {
+        /** User is activce. */
+        ACTIVE,
+        /** User is inactive. */
+        INACTIVE
+    }
+
+    @Entity
+    @Getter
+    @AllArgsConstructor
+    @ToString
+    public static class User {
+        @Id
+        @GeneratedValue(strategy = GenerationType.AUTO)
+        private Long id;
+
+        private String firstName;
+        private String lastName;
+        private String email;
+
+        private int age;
+
+        private Status status;
+    }
+
+    public static class UserSpecifications {
+        public static PredicateSpecification<User> active() {
+            return (from, cb) -> cb.equal(from.get("status"), Status.ACTIVE);
+        }
+
+        public static PredicateSpecification<User> lastNameIs(String lastName) {
+            return (from, cb) -> cb.equal(from.get("lastName"), lastName);
+        }
+
+        public static PredicateSpecification<User> olderThan(int age) {
+            return (from, cb) -> cb.greaterThan(from.get("age"), age);
+        }
     }
 }

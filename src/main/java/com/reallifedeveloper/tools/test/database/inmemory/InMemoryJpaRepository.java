@@ -32,6 +32,7 @@ import jakarta.persistence.IdClass;
  *
  * @author RealLifeDeveloper
  */
+@SuppressWarnings({ "PMD.CouplingBetweenObjects", "PMD.TooManyMethods" })
 public class InMemoryJpaRepository<T, ID extends Comparable<? super ID>> extends AbstractInMemoryCrudRepository<T, ID>
         implements JpaRepository<T, ID>, JpaSpecificationExecutor<T> {
 
