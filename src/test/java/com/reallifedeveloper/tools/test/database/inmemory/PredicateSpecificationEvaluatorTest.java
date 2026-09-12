@@ -228,6 +228,15 @@ public class PredicateSpecificationEvaluatorTest {
     }
 
     @Test
+    public void inDoesNotFailIfGivenASingleValue() {
+        Order order = new Order(1L, null, Instant.now(CLOCK), CUSTOMER_1);
+
+        PredicateSpecification<Order> spec = (c, cb) -> c.get("id").in(cb.literal(1L));
+
+        assertTrue(evaluator.matches(spec, order));
+    }
+
+    @Test
     void criteriaBuilderInMatchesAsExpected() {
         Order order1 = new Order(1L, OrderStatus.SHIPPED, Instant.now(CLOCK), CUSTOMER_1);
         Order order2 = new Order(2L, OrderStatus.NEW, Instant.now(CLOCK), CUSTOMER_2);
@@ -258,6 +267,40 @@ public class PredicateSpecificationEvaluatorTest {
 
         assertFalse(evaluator.matches(spec, order1));
         assertTrue(evaluator.matches(spec, order2));
+    }
+
+    @Test
+    void evaluatesMapJoinValue() {
+        Order order1 = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
+        order1.addOrderLine(new OrderLine(1l, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
+        Order order2 = new Order(2L, OrderStatus.NEW, Instant.now(CLOCK), CUSTOMER_2);
+        order2.addOrderLine(new OrderLine(2L, order2, PRODUCT_TV, 1, new BigDecimal(500)));
+        sanityCheck(order1, order2);
+
+        PredicateSpecification<Order> spec = (root, cb) -> {
+            MapJoin<Order, String, OrderLine> line = root.joinMap("linesBySku");
+            return cb.equal(line.value().get("product").get("sku"), line.key());
+        };
+
+        assertTrue(evaluator.matches(spec, order1));
+        assertTrue(evaluator.matches(spec, order2));
+    }
+
+    @Test
+    public void mapJoinCanBeJoined() {
+        Order order1 = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
+        order1.addOrderLine(new OrderLine(1l, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
+        Order order2 = new Order(2L, OrderStatus.NEW, Instant.now(CLOCK), CUSTOMER_2);
+        order2.addOrderLine(new OrderLine(2L, order2, PRODUCT_TV, 1, new BigDecimal(500)));
+        sanityCheck(order1, order2);
+
+        PredicateSpecification<Order> spec = (o, cb) -> {
+            MapJoin<Order, String, OrderLine> line = o.joinMap("linesBySku");
+            return cb.equal(line.join("order").get("status"), OrderStatus.PAID);
+        };
+
+        assertTrue(evaluator.matches(spec, order1));
+        assertFalse(evaluator.matches(spec, order2));
     }
 
     @Test
@@ -335,6 +378,26 @@ public class PredicateSpecificationEvaluatorTest {
     }
 
     @Test
+    public void isEmptyFailsIfNotGivenACollection() {
+        Order order = new Order(1L, null, Instant.now(CLOCK), CUSTOMER_1);
+
+        PredicateSpecification<Order> spec = (o, cb) -> cb.isEmpty(o.get("id"));
+
+        Exception e = assertThrows(IllegalArgumentException.class, () -> evaluator.matches(spec, order));
+        assertEquals("isEmpty() requires a Collection, but got java.lang.Long", e.getMessage());
+    }
+
+    @Test
+    public void isEmptyConsidersNullAsUnknownWhichDoesNotMatch() {
+        Order order = new Order(1L, null, Instant.now(CLOCK), CUSTOMER_1);
+
+        PredicateSpecification<Order> spec = (o, cb) -> cb.isEmpty(o.get("status"));
+
+        assertFalse(evaluator.matches(spec, order));
+
+    }
+
+    @Test
     public void isNotEmptyMatchesAsExpected() {
         Order order1 = new Order(1L, OrderStatus.PAID, Instant.now(CLOCK), CUSTOMER_1);
         order1.addOrderLine(new OrderLine(1l, order1, PRODUCT_BOOK, 1, new BigDecimal("10")));
@@ -344,6 +407,26 @@ public class PredicateSpecificationEvaluatorTest {
 
         assertTrue(evaluator.matches(hasLines, order1));
         assertFalse(evaluator.matches(hasLines, order2));
+    }
+
+    @Test
+    public void isNotEmptyFailsIfNotGivenACollection() {
+        Order order = new Order(1L, null, Instant.now(CLOCK), CUSTOMER_1);
+
+        PredicateSpecification<Order> spec = (o, cb) -> cb.isNotEmpty(o.get("id"));
+
+        Exception e = assertThrows(IllegalArgumentException.class, () -> evaluator.matches(spec, order));
+        assertEquals("isNotEmpty() requires a Collection, but got java.lang.Long", e.getMessage());
+    }
+
+    @Test
+    public void isNotEmptyConsidersNullAsUnknownWhichDoesNotMatch() {
+        Order order = new Order(1L, null, Instant.now(CLOCK), CUSTOMER_1);
+
+        PredicateSpecification<Order> spec = (o, cb) -> cb.isNotEmpty(o.get("status"));
+
+        assertFalse(evaluator.matches(spec, order));
+
     }
 
     @Test
@@ -375,6 +458,82 @@ public class PredicateSpecificationEvaluatorTest {
     }
 
     @Test
+    public void functionFailsIfGivenTheWrongNumberOfArguments() {
+        PredicateSpecificationEvaluator<Customer> evaluatorWithFunction = new PredicateSpecificationEvaluator<Customer>()
+                .registerFunction("toLower", String.class, String.class, s -> s.toLowerCase(Locale.ROOT));
+
+        PredicateSpecification<Customer> spec = (c, cb) -> cb.equal(cb.function("toLower", String.class, c.get("name"), cb.literal("foo")),
+                cb.literal("alice"));
+
+        Exception e = assertThrows(IllegalArgumentException.class, () -> evaluatorWithFunction.matches(spec, CUSTOMER_1));
+        assertEquals("Function 'toLower' expected 1 arguments but received 2", e.getMessage());
+    }
+
+    @Test
+    public void functionFailsIfGivenArgumentOfWrongType() {
+        PredicateSpecificationEvaluator<Customer> evaluatorWithFunction = new PredicateSpecificationEvaluator<Customer>()
+                .registerFunction("toLower", String.class, String.class, s -> s.toLowerCase(Locale.ROOT));
+
+        PredicateSpecification<Customer> spec = (c, cb) -> cb.equal(cb.function("toLower", String.class, cb.literal(42)),
+                cb.literal("alice"));
+
+        Exception e = assertThrows(IllegalArgumentException.class, () -> evaluatorWithFunction.matches(spec, CUSTOMER_1));
+        assertEquals("Argument 0 to function 'toLower' was java.lang.Integer, expected java.lang.String", e.getMessage());
+    }
+
+    @Test
+    public void functionFailsIfCalledWithWrongResultType() {
+        PredicateSpecificationEvaluator<Customer> evaluatorWithFunction = new PredicateSpecificationEvaluator<Customer>()
+                .registerFunction("toLower", String.class, String.class, s -> s.toLowerCase(Locale.ROOT));
+
+        PredicateSpecification<Customer> spec = (c, cb) -> cb.equal(cb.function("toLower", Integer.class, cb.literal("foo")),
+                cb.literal("alice"));
+
+        Exception e = assertThrows(IllegalArgumentException.class, () -> evaluatorWithFunction.matches(spec, CUSTOMER_1));
+        assertEquals(
+                "Function 'toLower' was requested with result type java.lang.Integer, but is registered with result type java.lang.String",
+                e.getMessage());
+    }
+
+    @Test
+    public void functionFailsIfReturningWrongResultType() {
+        PredicateSpecificationEvaluator<Customer> evaluatorWithFunction = new PredicateSpecificationEvaluator<Customer>()
+                .registerFunction("foo", String.class, List.of(String.class), s -> 42);
+
+        PredicateSpecification<Customer> spec = (c, cb) -> cb.equal(cb.function("foo", String.class, cb.literal("foo")),
+                cb.literal("alice"));
+
+        Exception e = assertThrows(IllegalArgumentException.class, () -> evaluatorWithFunction.matches(spec, CUSTOMER_1));
+        assertEquals("Function 'foo' returned java.lang.Integer, but CriteriaBuilder.function() declared java.lang.String", e.getMessage());
+    }
+
+    @Test
+    public void functionsCanHandlePrimitiveReturnTypes() {
+        PredicateSpecificationEvaluator<Customer> evaluatorWithFunction = new PredicateSpecificationEvaluator<Customer>()
+                .registerFunction("intFunction", int.class, List.of(long.class), args -> 42)
+                .registerFunction("longFunction", long.class, List.of(float.class), args -> 42L)
+                .registerFunction("floatFunction", float.class, List.of(double.class), args -> 42.0f)
+                .registerFunction("doubleFunction", double.class, List.of(short.class), args -> 42.0)
+                .registerFunction("shortFunction", short.class, List.of(byte.class), args -> (short) 42)
+                .registerFunction("byteFunction", byte.class, List.of(boolean.class), args -> (byte) 42)
+                .registerFunction("booleanFunction", boolean.class, List.of(char.class), args -> true)
+                .registerFunction("charFunction", char.class, List.of(int.class), args -> '*');
+
+        PredicateSpecification<Customer> spec = (from,
+                cb) -> cb.equal(
+                        cb.function("intFunction", int.class,
+                                cb.function("longFunction", long.class,
+                                        cb.function("floatFunction", float.class,
+                                                cb.function("doubleFunction", double.class,
+                                                        cb.function("shortFunction", short.class, cb.function("byteFunction", byte.class,
+                                                                cb.function("booleanFunction", boolean.class,
+                                                                        cb.function("charFunction", char.class, cb.literal(0))))))))),
+                        cb.literal(42));
+
+        assertTrue(evaluatorWithFunction.matches(spec, CUSTOMER_1));
+    }
+
+    @Test
     public void propertyAccessUsingFieldsAndNestedGets() {
         PredicateSpecificationEvaluator<Customer> customerEvaluator = new PredicateSpecificationEvaluator<>();
         CustomerGroup customerGroup = new CustomerGroup(1L, "My Group"); // The CustomerGroup class has no getters
@@ -395,6 +554,15 @@ public class PredicateSpecificationEvaluatorTest {
 
         assertFalse(evaluator.matches(unpaidSpec, order1));
         assertTrue(evaluator.matches(unpaidSpec, order2));
+    }
+
+    @Test
+    public void notConsidersNullAsUnknownWhichDoesNotMatch() {
+        Order order = new Order(1L, null, Instant.now(CLOCK), CUSTOMER_1);
+
+        PredicateSpecification<Order> spec = (o, cb) -> cb.not(cb.equal(o.get("status"), cb.literal(OrderStatus.PAID)));
+
+        assertFalse(evaluator.matches(spec, order));
     }
 
     @Test
@@ -423,7 +591,7 @@ public class PredicateSpecificationEvaluatorTest {
         PredicateSpecification<Customer> spec = (c, cb) -> {
             System.out.println("===== " + c.get("name").toString());
             System.out.println("===== " + c.get("name").hashCode());
-            // System.out.println("===== " + c.get("name").equals(null));
+            // System.out.println("===== " + c.get("name").equals(c.get("name")));
             return cb.conjunction();
         };
         assertTrue(customerEvaluator.matches(spec, CUSTOMER_1));
