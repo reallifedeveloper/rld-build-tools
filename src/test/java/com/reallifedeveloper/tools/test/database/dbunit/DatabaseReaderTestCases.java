@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -137,9 +138,9 @@ public interface DatabaseReaderTestCases {
         mappedEntities.put(testEntityWithoutRepository2.id(), testEntityWithoutRepository2);
         DbUnitTestEntity expected = new DbUnitTestEntity((byte) 1, (short) 2, 3, 4L, 5.0f, 6.0, false, 'a', "foo",
                 TestUtil.parseDate("2014-01-01"), LocalDate.parse("2026-05-10"), LocalDateTime.parse("2026-05-10T10:45:00"),
-                ZonedDateTime.parse("2026-05-10T12:45:00+02:00"), TestEnum.FOO, new BigDecimal("1234.56"), new BigInteger("9999999999"),
-                Arrays.asList("foo", "bar"), new TestEntity(42L, "foo"), Arrays.asList(new TestEntity[] { testEntity42, testEntity4711 }),
-                testEntityWithoutRepository2,
+                ZonedDateTime.parse("2026-05-10T12:45:00+02:00"), Instant.parse("2026-09-11T19:47:00Z"), TestEnum.FOO,
+                new BigDecimal("1234.56"), new BigInteger("9999999999"), Arrays.asList("foo", "bar"), new TestEntity(42L, "foo"),
+                Arrays.asList(new TestEntity[] { testEntity42, testEntity4711 }), testEntityWithoutRepository2,
                 Arrays.asList(new TestEntityWithoutRepository[] { testEntityWithoutRepository1, testEntityWithoutRepository2 }),
                 mappedEntities);
         testEntityWithoutRepository1.dbUnitTestEntity(expected);
@@ -149,8 +150,9 @@ public interface DatabaseReaderTestCases {
 
         expected = new DbUnitTestEntity((byte) 10, (short) 11, 12, 13L, 14.0f, 15.0, true, 'b', "bar", TestUtil.parseDate("2015-01-01"),
                 LocalDate.parse("2026-05-10"), LocalDateTime.parse("2026-05-10T11:45:00"), ZonedDateTime.parse("2026-05-10T13:45:00+02:00"),
-                TestEnum.BAR, new BigDecimal("-1000.001"), new BigInteger("8888888888"), Arrays.asList("baz"), new TestEntity(4711L, "bar"),
-                Collections.emptyList(), testEntityWithoutRepository1, Collections.emptyList(), Collections.emptyMap());
+                Instant.parse("2026-09-11T19:55:00Z"), TestEnum.BAR, new BigDecimal("-1000.001"), new BigInteger("8888888888"),
+                Arrays.asList("baz"), new TestEntity(4711L, "bar"), Collections.emptyList(), testEntityWithoutRepository1,
+                Collections.emptyList(), Collections.emptyMap());
         actual = dbUnitTestEntityRepository().findById(12).get();
         verifyEntity(expected, actual);
     }

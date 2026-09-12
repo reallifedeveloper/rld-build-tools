@@ -2,6 +2,7 @@ package com.reallifedeveloper.tools.test.database.dbunit;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -49,6 +50,7 @@ public class DbUnitTestEntity {
     private LocalDate localDate;
     private LocalDateTime localDateTime;
     private ZonedDateTime zonedDateTime;
+    private Instant instant;
     private TestEnum testEnum;
     private BigDecimal bd;
     private BigInteger bi;

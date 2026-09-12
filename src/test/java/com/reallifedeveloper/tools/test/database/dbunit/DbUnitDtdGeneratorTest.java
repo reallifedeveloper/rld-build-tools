@@ -35,6 +35,7 @@ public class DbUnitDtdGeneratorTest {
                 D CDATA #IMPLIED
                 DATE CDATA #IMPLIED
                 F CDATA #IMPLIED
+                INSTANT CDATA #IMPLIED
                 L CDATA #IMPLIED
                 LOCALDATE CDATA #IMPLIED
                 LOCALDATETIME CDATA #IMPLIED
