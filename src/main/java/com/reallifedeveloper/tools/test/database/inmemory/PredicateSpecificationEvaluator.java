@@ -1094,7 +1094,15 @@ public final class PredicateSpecificationEvaluator<T> {
 
             Accessor accessor = CACHE.computeIfAbsent(new Key(target.getClass(), property), PropertyAccess::findAccessor);
 
-            return accessor.read(target);
+            Object value = accessor.read(target);
+            return unwrapOptionalIfNecessary(value);
+        }
+
+        private static @Nullable Object unwrapOptionalIfNecessary(Object value) {
+            if (value instanceof Optional<?> optional) {
+                return optional.orElse(null);
+            }
+            return value;
         }
 
         private static Accessor findAccessor(Key key) {
