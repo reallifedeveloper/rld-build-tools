@@ -102,7 +102,6 @@ public abstract class AbstractDbTest {
      * @throws Exception if something goes wrong
      */
     @BeforeEach
-    @SuppressWarnings("PMD.SignatureDeclareThrowsException")
     public void setUpDatabase() throws Exception {
         dbTestHelper = new DbTestHelper(getDataSource(), getDataSet(), getSchemaName(), getDataTypeFactory());
         dbTestHelper.setSetUpOperation(getSetUpOperation());
@@ -116,7 +115,6 @@ public abstract class AbstractDbTest {
      * @throws Exception if something goes wrong
      */
     @AfterEach
-    @SuppressWarnings("PMD.SignatureDeclareThrowsException")
     public void tearDownDatabase() throws Exception {
         if (dbTestHelper != null) {
             dbTestHelper.clean();

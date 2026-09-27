@@ -41,7 +41,6 @@ public final class MoveMessages {
      *
      * @return the new {@code MoveMessages} instance
      */
-    @SuppressWarnings("PMD.UseObjectForClearerAPI")
     public static MoveMessages createInstance(String host, String username, String password, String virtualHost) {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(host);
